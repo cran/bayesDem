@@ -1,0 +1,109 @@
+1.0-0 (10/06/2010)
+-----
+Option of automatic run (including configuration window) added to the 'Run' and 'Continue' tabs.
+
+Option of 'use diagnostics' added to the 'Make Prediction' tab.
+
+'Convergence' tab updated due to changes in tfr.diagnose.
+
+0.6-2 (05/12/2010)
+-----
+Bug in the widget for saving trajectory plots fixed.
+
+0.6-1 (05/05/2010)
+-----
+Modifications due to renamed functions in bayesTFR.
+
+0.6-0 (03/29/2010)
+-----
+A tab for analyzing convergence added to the 'Explore Results' tab.
+
+0.5-0 (03/01/2010)
+-----
+Input fields added for setting time range for displaying TFR trajectories.
+
+A button added to the TFR table that prints out the table into the R console.
+
+Prediction end.year removed from results tabs (since it is no longer needed to identify a prediction).
+
+A 'TFR world map' tab added to the results tab. bayesTFR function tfr.map exposed to the GUI.
+
+The 'Advanced Parameters' window (in 'Run MCMC' tab) re-designed.
+
+0.4.2 (02/03/2010)
+-----
+All graphs are now sent to a graphics device which can be resized by hand and from which the graphs can be saved into files. The fields for entering width and height were removed and the Advanced Parameters dialog was moved to the main tabs (in Explore Results). This change requires an additional package to be installed: cairoDevice
+
+Required fields marked by a '*'.
+
+Color of tab-titles changed.
+
+Field for entering the simulation directory moved above all tabs, since it is common to all four steps. This way, the user can enter it only once.
+
+'Generate Script' buttons for the Results tab added.
+
+Quote issue in 'Generate script' fixed. Now the script should work when copied and pasted to the R console.
+
+0.4.1 (01/24/2010)
+-----
+Tabs for extra countries renamed to Extra Areas & Regions.
+
+Changes due to the conversion of semicolon-separated input files to tab-seaparated files in bayesTFR.
+
+0.4.0 (01/16/2010)
+-----
+(depends on bayesTFR >= 0.4-2)
+
+New tabs for running MCMC and making predictions for extra countries and regions.
+
+Info buttons added.
+
+Input field for sigma.end removed.
+
+Selection of countries in various country menus is dependent on the content of the simulation directory.
+
+In the Results tab, the 'Prediction end year' field moved up.
+
+0.3-1 (12/14/2009)
+-----
+(depends on bayesTFR >= 0.3-1)
+
+Parameter alpha0 changed to alpha0.p; its values changed too.
+	
+A Warning window appears if the user tries to run mcmc on a directory that contains data and the 'Overwrite existing results' button is unchecked.
+	
+Added an input field for a user-specified TFR file (in Run MCMC tab).
+	
+Window for setting advanced MCMC parameters improved - Buttons 'Cancel' and 'Set Default Values' added.
+
+0.2-3 (11/10/2009)
+-----
+Font for the main title changed.
+	
+Version numbers of bayesDem and bayesTFR added to the GUI.
+
+0.2-2
+-----
+Added an input field for number of trajectories in the prediction tab.  
+
+0.2-1
+-----
+Updated to work with bayesTFR v0.2-1.
+
+0.1-3
+-----
+Field for inserting number of trajectories to be saved as ascii added to 'Make Prediction' tab.
+
+Widgets for setting RNG seed added to 'Run MCMC' and 'Make Prediction' tabs.
+
+0.1-2
+-----
+The tabs 'run MCMC', 'Continue MCMC' and 'Make predictions' got a button 'Generate Script' that generates a script for a command line use. 
+	
+Added initialization message - The main window appears now after it is completely built.
+	
+An option to plot/tabulate the half-child variant together with the trajectories added.
+
+Added interface to allow for plotting trajectories and DL curves for all countires.
+	
+Allows entering additional graphical parameters for plotting TFR trajectories and DL curve.

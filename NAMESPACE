@@ -1,0 +1,4 @@
+# export functions
+export(
+    bayesDem.go
+    )
