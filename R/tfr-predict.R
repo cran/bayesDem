@@ -4,6 +4,8 @@ TFRnewPred.group <- function(g, main.win, parent) {
 	pred.all <- tfr.pred.all.countries.group(all.c.g, main.win, parent)
 	extra.c.g <- ggroup(label="<span color='#0B6138'>Extra Areas &amp; Regions</span>", markup=TRUE, horizontal=FALSE, expand=TRUE, cont=nb)
 	pred.extra <- tfr.pred.extra.countries.group(extra.c.g, main.win, parent)
+	edit.g <- ggroup(label="<span color='#0B6138'>Edit Predictions</span>", markup=TRUE, horizontal=FALSE, expand=TRUE, cont=nb)
+	pred.edit <- tfr.edit.predictions.group(edit.g, main.win, parent)
 	svalue(nb) <- 1
 	return(pred.all)
 }
@@ -127,8 +129,8 @@ tfr.pred.extra.countries.group <- function(g, main.win, parent) {
 										})
 	addSpace(e$countries.g1, 20)
 	e$e.countries.gb <- gbutton("  Select specific countries/regions  ", cont=e$countries.g1,
-				handler=multiSelectCountryMenuPred,
-				action=list(mw=main.win, env=e))
+				handler=selectCountryMenuPred,
+				action=list(mw=main.win, env=e, not.predicted=TRUE, multiple=TRUE, sorted=FALSE))
 	enabled(e$e.countries.gb) <- !svalue(e$all.countries)
 	
 	e$sim.g <- gframe("<span color='blue'>Output</span>", markup=TRUE, horizontal=FALSE, cont=g)
@@ -140,15 +142,15 @@ tfr.pred.extra.countries.group <- function(g, main.win, parent) {
 	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, cont=e$sim.g2)
 
 	addSpring(g)
-	e$predict.g <- ggroup(horizontal=TRUE, cont=g)
+	predict.g <- ggroup(horizontal=TRUE, cont=g)
 	create.help.button(topic='tfr.predict.extra', package='bayesTFR', 
-				parent.group=e$predict.g,
+				parent.group=predict.g,
 						parent.window=main.win)
-	addSpring(e$predict.g)
-	gbutton(' Generate Script ', cont=e$predict.g, handler=run.tfr.prediction.extra,
+	addSpring(predict.g)
+	gbutton(' Generate Script ', cont=predict.g, handler=run.tfr.prediction.extra,
 				action=list(mw=main.win, env=e, script=TRUE))
 	gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.tfr.prediction.extra, 
-				action=list(mw=main.win, env=e, script=FALSE)), cont=e$predict.g)
+				action=list(mw=main.win, env=e, script=FALSE)), cont=predict.g)
 
 	return(e)
 		  
@@ -163,7 +165,7 @@ run.tfr.prediction.extra <- function(h, ...)
 						numtext=c('save.as.ascii') #can be both - numeric or text
 						)
 	params <- get.parameters(param.names, e, h$action$script)
-	params[['countries']] <- if(svalue(e$all.countries)) NULL else e$selected.extra.countries
+	params[['countries']] <- if(svalue(e$all.countries)) NULL else e$selected.countries
 	
 	if (h$action$script) {
 		script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
@@ -175,21 +177,83 @@ run.tfr.prediction.extra <- function(h, ...)
 	}
 }
 
-get.table.of.countries.not.predicted <- function(sim.dir, sorted=TRUE) {
+tfr.edit.predictions.group <- function(g, main.win, parent) {
+	e <- new.env()
+	e$sim.dir <- parent$sim.dir
+	e$edit.frame <- gframe("<span color='blue'>Edit Median</span>", markup=TRUE, 
+						horizontal=FALSE, cont=g, expand=TRUE)
+	gbutton("  Select specific country/region  ", cont=e$edit.frame,
+				handler=selectCountryMenuPred,
+				action=list(mw=main.win, env=e, not.predicted=FALSE, multiple=FALSE,
+							edit.median=TRUE, sorted=TRUE))
+
+	#addSpring(g)
+	button.g <- ggroup(horizontal=TRUE, cont=g)
+	addSpring(button.g)
+	e$restoreb <- gbutton(action=gaction(label='Restore BHM medians', 
+				handler=restore.bhm.medians, action=list(mw=main.win, env=e)), cont=button.g)
+	enabled(e$restoreb) <- FALSE
+	e$applyb <- gbutton(action=gaction(label='Save', handler=tfr.edit.prediction, 
+				action=list(mw=main.win, env=e)), cont=button.g)
+	enabled(e$applyb) <- FALSE
+	
+	addSpring(g)
+	convert.frame <- gframe("<span color='blue'>Convert trajectories to ASCII</span>", markup=TRUE, 
+						horizontal=TRUE, cont=g)
+	glabel("Nr. of ascii trajectories:", cont=convert.frame)
+	e$save.as.ascii <- gedit(formals('tfr.predict')$save.as.ascii, width=5, cont=convert.frame)
+	e$write.summary <- gcheckbox("Write summary files", checked=TRUE, cont=convert.frame)
+	e$verbose <- gcheckbox("Verbose", checked=FALSE, cont=convert.frame)
+	addSpring(convert.frame)
+	button.conv <- gbutton(action=gaction(label='Convert', handler=.convert.trajectories, 
+				action=list(mw=main.win, env=e)), cont=convert.frame)
+}
+
+tfr.edit.prediction <- function(h, ...) {
+	e <- h$action$env
+	values <- unlist(e$median.df[1,])
+	where.modified <- values != e$medians
+	tfr.median.set(e$sim.dir.value, e$edit.country.obj$code, values=values[where.modified], 
+					years=as.numeric(names(values)[where.modified]))
+	h$action$env$medians <- values
+	enabled(e$applyb) <- FALSE
+}
+
+restore.bhm.medians <- function(h, ...) {
+	e <- h$action$env
+	new.pred <- tfr.median.shift(e$sim.dir.value, e$edit.country.obj$code, reset=TRUE)
+	data <- .get.data.for.median.editor(new.pred, e$edit.country.obj)
+	e$median.df[,] <- data
+}
+
+.convert.trajectories <- function(h, ...) {
+	e <- h$action$env
+	sim.dir <- svalue(e$sim.dir)
+	nr.traj <- as.numeric(svalue(e$save.as.ascii))
+	convert.tfr.trajectories(dir=sim.dir, n=nr.traj, verbose=svalue(e$verbose))
+	if(svalue(e$write.summary)) {
+		write.projection.summary(dir=sim.dir)
+	}
+}
+
+get.table.of.countries.from.prediction <- function(sim.dir, not.predicted=TRUE, sorted=TRUE) {
 	loc.data.pred <- get.table.of.countries.from.meta(sim.dir, prediction=TRUE, sorted=sorted)
 	if(is.null(loc.data.pred)) return(NULL)
+	if(!not.predicted) return(loc.data.pred)
 	loc.data.sim <- get.table.of.countries.from.meta(sim.dir, prediction=FALSE, sorted=sorted)
 	if(is.null(loc.data.sim)) return(NULL)
 	mcmc.set <- get.tfr.mcmc(sim.dir=sim.dir)
+	if (mcmc.set$meta$nr_countries <= mcmc.set$meta$nr_countries_estimation) {
+		gmessage("No countries/regions without a prediction available.")
+		return(NULL)
+	}
 	loc.data.sim.extra <- loc.data.sim[(mcmc.set$meta$nr_countries_estimation+1):mcmc.set$meta$nr_countries,]
-
 	# find countries without a prediction
 	is.predicted <- is.element(loc.data.sim.extra[,'code'], loc.data.pred[,'code'])
 	not.predicted.idx <- (1:dim(loc.data.sim.extra)[1])[!is.predicted]
 	pr <- rep('yes', dim(loc.data.sim.extra)[1])
 	pr[not.predicted.idx] <- 'no'
 	loc.data<-cbind(loc.data.sim.extra, predicted=pr)
-	
 	if(sorted) {
 		ord.idx <- order(loc.data[,'name'])
 		loc.data <- loc.data[ord.idx,]
@@ -197,9 +261,46 @@ get.table.of.countries.not.predicted <- function(sim.dir, sorted=TRUE) {
 	return(loc.data)
 }
 
-multiSelectCountryMenuPred <- function(h, ...) {
+.get.data.for.median.editor <- function(pred, country.obj) {
+	pred.years <- dimnames(pred$quantiles)[[3]]
+	medians <- get.median.from.prediction(pred, country.obj$index, country.obj$code)
+	data <- matrix(medians, ncol=length(medians))
+	colnames(data) <- pred.years
+	rownames(data) <- 'medians'
+	return(data)
+}
+
+show.median.editor <- function(e){
+	sim.dir <- svalue(e$sim.dir)
+	pred <- get.tfr.prediction(sim.dir)
+	country.obj <- get.country.object(e$selected.countries, meta=pred$mcmc.set$meta)
+	if(!is.null(e$country.label)) svalue(e$country.label) <- country.obj$name
+	else {
+		addSpring(e$edit.frame)	
+		e$country.label <- glabel(country.obj$name, cont=e$edit.frame)
+	}
+	e$sim.dir.value <- sim.dir
+	e$edit.country.obj <- country.obj
+	data <- .get.data.for.median.editor(pred, country.obj)
+	e$medians <- data[1,]
+	if(!is.null(e$median.df)) e$median.df[,] <- data
+	else {
+		f <- function(env) {
+				enabled(env$applyb) <- TRUE; enabled(env$restoreb) <- TRUE
+				}
+		df.view <- makeDFView(data, e$edit.frame, f, e)
+		e$median.df <- df.view$model
+		#e$median.df <- gdf(data, cont=e$edit.frame)
+		#addhandlerchanged(e$median.df, handler=function(h, ...) {
+		#		enabled(e$applyb) <- TRUE; enabled(e$restoreb) <- TRUE
+		#		})
+	}
+}
+
+selectCountryMenuPred <- function(h, ...) {
 	country.selected <- function(h1, ...) {
-		h$action$env$selected.extra.countries <- svalue(h$action$env$sel.extra.country.gt)
+		h$action$env$selected.countries <- svalue(h$action$env$sel.extra.country.gt)
+		if(!is.null(h$action$edit.median) && h$action$edit.median) show.median.editor(h$action$env) 
 		visible(h$action$env$extra.country.sel.win) <- FALSE
 	}
 	new.window <- TRUE
@@ -211,7 +312,7 @@ multiSelectCountryMenuPred <- function(h, ...) {
 		} else {
 			extra.country.table <- get.table.of.countries.from.locfile(
 												sim.dir=svalue(h$action$env$sim.dir),
-												sorted=FALSE)
+												sorted=h$action$sorted)
 			if(dim(extra.country.table)[1] != dim(h$action$env$extra.country.table)[1]) {
 				dispose(h$action$env$extra.country.sel.win)
 				new.window <- TRUE
@@ -223,7 +324,8 @@ multiSelectCountryMenuPred <- function(h, ...) {
 	}
 	if(new.window) {
 		sim.dir.used <- svalue(h$action$env$sim.dir)
-		country.table <- get.table.of.countries.not.predicted(sim.dir=sim.dir.used, sorted=FALSE)
+		country.table <- get.table.of.countries.from.prediction(sim.dir=sim.dir.used, 
+							not.predicted=h$action$not.predicted, sorted=h$action$sorted)
 		if (is.null(country.table)) return(NULL)
 		h$action$env$sim.dir.used <- sim.dir.used
 		h$action$env$extra.country.table <- country.table
@@ -236,7 +338,7 @@ multiSelectCountryMenuPred <- function(h, ...) {
 							action=list(env=h$action$env))
 		t.group <- ggroup(horizontal=FALSE, cont=win)
 		h$action$env$sel.extra.country.gt <- gtable(h$action$env$extra.country.table, cont=t.group, 
-					expand=TRUE, multiple=TRUE, handler=country.selected)
+					expand=TRUE, multiple=h$action$multiple, handler=country.selected)
 		b.group <- ggroup(horizontal=TRUE, cont=t.group)
 		gbutton('Cancel', cont=b.group, handler=function(h, ...) 
 					visible(win) <- FALSE)
