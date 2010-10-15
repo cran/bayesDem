@@ -150,3 +150,47 @@ has.required.arguments <- function(par.names, env) {
 	}
 	return(TRUE)
 }
+
+makeDFView <- function(df, container, f=NULL, ...) {
+	model <- rGtkDataFrame(df)
+	view <- gtkTreeView(model)
+	## Michael Lawrence's trick
+	mapply(view$insertColumnWithAttributes,-1, colnames(model), 
+		lapply(1:ncol(model), function(i) gtkCellRendererText()), text = seq_len(ncol(model)) - 1)
+
+	sw <- gtkScrolledWindow()
+	sw$add(view)
+	
+	coerceVar <- function(x, value) UseMethod("coerceVar")
+	coerceVar.default <- function(x, value) value
+	coerceVar.numeric <- function(x, value) as.numeric(value)
+	coerceVar.integer <- function(x, value) as.integer(value)
+	coerceVar.logical <- function(x, value) as.logical(value)
+	coerceVar.factor <- function(x, value) {
+		ind <- pmatch(value, levels(x))
+		if(is.na(ind))
+			ind
+		else
+			levels(x)[ind]
+	}
+
+	sapply(1:ncol(model), function(j) {
+		col <- view$getColumn(j-1)
+		#print(col)
+		cr <- col$getCellRenderers()[[1]]
+		cr['editable'] <- TRUE
+		gSignalConnect(cr, "edited", 
+			f=function(cr, path, newtext, user.data) {
+				if(!is.null(f)) f(...) else NULL
+				curRow <- as.numeric(path) + 1
+				curCol <- user.data$column
+				model <- user.data$model
+				## coerce newtext from character to desired type
+				## otherwise this coerces to character
+				model[curRow, curCol] <- coerceVar(model[,curCol], newtext)
+			}, data=list(model=model, column=j))
+	})
+
+	add(container, sw, expand=TRUE)
+	list(model=model, view=view)
+}
