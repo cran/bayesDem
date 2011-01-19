@@ -3,17 +3,17 @@
 \alias{bayesDem.go}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Start Graphical User Interface for bayesTFR
+Start Graphical User Interface for bayesTFR and bayesLife
 }
 \description{
-The function launches Graphical User Interface for the package \pkg{\link[bayesTFR:bayesTFR-package]{bayesTFR}}.
+The function launches Graphical User Interface for the packages \pkg{\link[bayesTFR:bayesTFR-package]{bayesTFR}} and \pkg{\link[bayesLife:bayesLife-package]{bayesLife}}.
 }
 \usage{
 bayesDem.go(wpp.year = wpp.year.default)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{wpp.year}{WPP year for which the GUI is started. Default is 2008. Note that the GUI will work only with values for which observed data are available in the \pkg{\link[bayesTFR:bayesTFR-package]{bayesTFR}} package. Currently it is only 2008, see \pkg{\link[bayesTFR]{UN2008}}.}
+  \item{wpp.year}{WPP year for which the GUI is started. Default is 2008. Note that the GUI will work only with values for which observed data are available in the two packages. Currently it is only 2008, see \pkg{\link[bayesTFR]{UN2008}} and \pkg{\link[bayesLife]{UN2008e0}}.}
 }
 %\details{
 %%  ~~ If necessary, more details than the description above ~~
