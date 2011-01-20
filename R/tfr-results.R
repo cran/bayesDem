@@ -67,7 +67,6 @@ TFRresults.group <- function(g, main.win, parent) {
 	############################################
 	map.g <- ggroup(label="<span color='#0B6138'>TFR world maps</span>", markup=TRUE, 
 					horizontal=FALSE, cont=e$nb)
-	defaults.map <- formals(tfr.map)
 	map.set.f <- gframe("<span color='blue'>Map settings</span>", markup=TRUE, 
 									horizontal=FALSE, cont=map.g)
 	map.set.g1 <- ggroup(horizontal=TRUE, cont=map.set.f)
@@ -188,7 +187,7 @@ TFRresults.group <- function(g, main.win, parent) {
 	# Convergence Diagnostics
 	############################################
 	convergence.g <- ggroup(label="<span color='#0B6138'>Convergence</span>", markup=TRUE, horizontal=FALSE, cont=e$nb)
-	create.convergence.tab(convergence.g, e$sim.dir, main.win)
+	create.convergence.tab(convergence.g, e$sim.dir, main.win=main.win)
 	
 					
 	svalue(e$nb) <- 1
@@ -196,32 +195,22 @@ TFRresults.group <- function(g, main.win, parent) {
 }
 #################################################################################
 
-create.convergence.tab <- function(parent, sim.dir, main.win=NULL) {
-	defaults <- formals(tfr.diagnose)
+create.convergence.tab <- function(parent, sim.dir, type='tfr', package='bayesTFR', main.win=NULL) {
+	defaults <- formals(paste(type,'.diagnose', sep=''))
 	e <- new.env()
 	e$sim.dir <- sim.dir
 	g1 <- ggroup(horizontal=TRUE, cont=parent)
 	gbutton('    Show available convergence diagnostics    ', cont=g1, handler=showConvergenceDiag,
-					action=list(mw=main.win, env=e))
-	
+					action=list(mw=main.win, env=e, type=type))
 	addSpace(parent, 20)
-	#g2 <- glo <- glayout(cont=parent)
 	g2 <- gframe("<span color='blue'>MCMC settings</span>", markup=TRUE, horizontal=TRUE, cont=parent)
-	l <- 1
-	#glo[l,1] <- 
 	glabel('Thin:', cont=g2)
-	#glo[l,2] <- 
 	glabel("<span color='red'>*</span>", markup=TRUE, cont=g2)
-	#glo[l,3] <- 
 	e$thin <- gedit(defaults$thin, width=5, cont=g2)
 	addSpace(g2, 5)
-	#glo[l,4] <- 
 	glabel('Burnin:', cont=g2)
-	#glo[l,5] <- 
 	glabel("<span color='red'>*</span>", markup=TRUE, cont=g2)
-	#glo[l,6] <- 
 	e$burnin <- gedit(defaults$burnin, width=5, cont=g2)
-	#addSpace(g2, 10)
 	g34f  <- gframe("<span color='blue'>Optional settings</span>", markup=TRUE, horizontal=FALSE, cont=parent)
 	g3 <- ggroup(horizontal=TRUE, cont=g34f)
 	e$keep.thin.mcmc <- gcheckbox('Keep thinned MCMCs', checked = defaults$keep.thin.mcmc, cont=g3)
@@ -241,17 +230,18 @@ create.convergence.tab <- function(parent, sim.dir, main.win=NULL) {
 	
 	addSpring(parent)
 	butg <- ggroup(horizontal=TRUE, cont=parent)
-	create.help.button(topic='tfr.diagnose', package='bayesTFR', parent.group=butg,
+	create.help.button(topic=paste(type,'.diagnose', sep=''), package=package, parent.group=butg,
 						parent.window=main.win)	
 	addSpring(butg)
 	gbutton('Generate Script', cont=butg, handler=computeConvergenceDiag, 
-								action=list(mw=main.win, env=e, script=TRUE))
+								action=list(mw=main.win, env=e, type=type, package=package, script=TRUE))
 	addSpace(butg, 5)
 	ComputeDiag <- gaction(label='Compute New Diagnostics',  handler=computeConvergenceDiag, 
-						action=list(mw=main.win, env=e, script=FALSE))
+						action=list(mw=main.win, env=e, type=type, package=package, script=FALSE))
 	gbutton(action=ComputeDiag, cont=butg)
-}
 	
+}
+
 create.country.widget <- function(parent, defaults=NULL, main.win=NULL, show.all=TRUE, 
 									prediction=FALSE, parent.env=NULL) {
 	e <- new.env()
@@ -297,21 +287,21 @@ create.graph.pars.widgets <- function (parent, main.win=NULL) {
 	return(pars.w)
 }
 
-get.table.of.countries.from.meta <- function(sim.dir, prediction=FALSE, sorted=TRUE) {
+get.table.of.countries.from.meta <- function(sim.dir, prediction=FALSE, sorted=TRUE, pred.type='tfr') {
 	if(prediction) {
-		pred <- get.tfr.prediction(sim.dir=sim.dir)
+		pred <- do.call(paste('get.', pred.type, '.prediction', sep=''), list(sim.dir=sim.dir))
 		if(is.null(pred)) {
 			gmessage('Simulation directory contains no valid predictions.', 
 					title='Input Error', icon='error')
 			return(NULL)
 		}
-		n <- dim(pred$tfr_matrix_reconstructed)[2]
+		n <- dim(bayesTFR:::get.data.imputed(pred))[2]
 		loc.data <- data.frame(code=pred$mcmc.set$meta$regions$country_code[1:n], 
 								name=pred$mcmc.set$meta$regions$country_name[1:n])
 	} else { #simulation
-		mcmc.set <- get.tfr.mcmc(sim.dir=sim.dir)
+		mcmc.set <- do.call(paste('get.', pred.type, '.mcmc', sep=''), list(sim.dir=sim.dir))
 		if(is.null(mcmc.set)) {
-			gmessage('Simulation directory contains no valid TFR MCMC results.', title='Input Error',
+			gmessage('Simulation directory contains no valid MCMC results.', title='Input Error',
 					icon='error')
 			return(NULL)
 		}
@@ -341,7 +331,9 @@ selectCountryMenu <- function(h, ...) {
 			new.window <- TRUE
 		} else {
 			country.table <- get.table.of.countries.from.meta(svalue(h$action$env$parent.env$sim.dir), 
-								prediction=h$action$env$prediction)
+								prediction=h$action$env$prediction, 
+								pred.type=if(is.null(h$action$env$parent.env$pred.type)) 'tfr' 
+											else h$action$env$parent.env$pred.type)
 			if(dim(country.table)[1] != dim(h$action$env$country.table)[1]) {
 				dispose(h$action$env$country.sel.win)
 				new.window <- TRUE
@@ -351,10 +343,11 @@ selectCountryMenu <- function(h, ...) {
 			}
 		}
 	}
-	
 	if(new.window) {
 		sim.dir.used <- svalue(h$action$env$parent.env$sim.dir)
-		country.table <- get.table.of.countries.from.meta(sim.dir.used, prediction=h$action$env$prediction)
+		country.table <- get.table.of.countries.from.meta(sim.dir.used, prediction=h$action$env$prediction,
+										pred.type=if(is.null(h$action$env$parent.env$pred.type)) 'tfr' 
+											else h$action$env$parent.env$pred.type)
 		if (is.null(country.table)) return(NULL)
 		h$action$env$sim.dir.used <- sim.dir.used
 		h$action$env$country.table <- country.table
@@ -404,8 +397,6 @@ get.country.code.from.widget <- function(country.widget, env, force.country.spec
 		if (!is.na(country.code)) country <- country.code
 		options(warn=warn)
 		country <- get.country.object(country, country.table=env$country.table)
-		#print(country)
-		#stop('')
 		if(is.null(country$name)) {
 			gmessage('Country does not exist.', title='Input Error',
 					icon='error')
@@ -456,7 +447,7 @@ showTFRtraj <- function(h, ...) {
 						paste(paste(names(param.plot1c), param.plot1c, sep='='), collapse=', '), ',',
 						pars.value, ')')
 			if (h$action$script) {
-				script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+				script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 				gtext(cmd, cont=script.text)
 			} else {
 				create.graphics.window(parent=h$action$mw, title=paste("Trajectories for", country.pars$name))
@@ -475,7 +466,7 @@ showTFRtraj <- function(h, ...) {
 			}
 			cmd <- paste(cmd, ')', sep='')
 			if (h$action$script) {
-				script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+				script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 				gtext(cmd, cont=script.text)
 			} else {
 				eval(parse(text=cmd))
@@ -518,7 +509,7 @@ showMap <- function(h, ...) {
 	
 	cmd <- paste(cmd, 'do.call("tfr.map", param.map)', sep='')
 	if (h$action$script) {
-		script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		gtext(cmd, cont=script.text)
 	} else {
 		g <- create.graphics.map.window(parent=h$action$mw, pred=pred, params=param.map, percentile=percentile, 
@@ -527,17 +518,19 @@ showMap <- function(h, ...) {
 }
 
 	
-create.graphics.map.window <- function(parent, pred, params, percentile, title='', dpi=80) {
+create.graphics.map.window <- function(parent, pred, params, percentile, title='', type='tfr', 
+											main.part=NULL, dpi=80) {
 	newMap <- function(h, ...) {
 		dev.set(h$action$dev)
 		do.show.map(pred, as.numeric(svalue(proj.year)), "dev.cur", h$action$map.pars)
 	}
-	do.show.map <- function(pred, projection.year, device, map.pars) {
+	do.show.map <- function(pred, projection.year, device, map.pars, ...) {
 		is.median <- percentile == 'median'
-		main <- paste(projection.year, "TFR:",
+		main <- paste(projection.year, if(is.null(main.part)) toupper(type) else main.part, ":",
 					if(is.median) percentile else paste(substr(percentile, 1, 5), ' bound of ',
 								substr(percentile, 7,8), '% interval', sep=''))
-		do.call('tfr.map', c(map.pars, list(projection.year=projection.year, device=device, main=main)))
+		do.call(paste(type, '.map', sep=''), 
+				c(map.pars, list(projection.year=projection.year, device=device, main=main)))
 	}
 	close.map <- function(h, ...) dev.off(h$action$dev)
 	years <- as.numeric(dimnames(pred$quantiles)[[3]])
@@ -593,7 +586,7 @@ showDLcurve <- function(h, ...) {
 						paste(paste(names(param.plot1c), param.plot1c, sep='='), collapse=', '), ', ',
 						pars.value, ')', sep='')
 		if (h$action$script) {
-			script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+			script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 			gtext(cmd, cont=script.text)
 		} else {
 			create.graphics.window(parent=h$action$mw, title=paste("Double Logistic Curves for", country.pars$name))
@@ -607,7 +600,7 @@ showDLcurve <- function(h, ...) {
 						paste(paste(names(param.plot.allc), param.plot.allc, sep='='), collapse=', '), ', ',
 					pars.value, ')', sep='')
 		if (h$action$script) {
-			script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+			script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 			gtext(cmd, cont=script.text)
 		} else {
 			eval(parse(text=cmd))
@@ -647,6 +640,7 @@ showParTraces <- function(h, ...) {
 
 computeConvergenceDiag <- function(h, ...) {
 	e <- h$action$env
+	type <- h$action$type
 	if(!has.required.arguments(list(sim.dir='Simulation directory', burnin='Burnin'), env=e)) return()
 	param.names <- list(numeric=c('burnin', 'thin', 'country.sampling.prop'),
 						text=c('sim.dir'),
@@ -654,14 +648,14 @@ computeConvergenceDiag <- function(h, ...) {
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	if(params$express || params$country.sampling.prop == 1) params$country.sampling.prop <- NULL
 	if (h$action$script) {
-		script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
-		gtext(paste('tfr.diagnose(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
+		script.text <- gwindow(paste(h$action$package, 'commands'), parent=h$action$mw)
+		gtext(paste(type, '.diagnose(', paste(paste(names(params), params, sep='='), collapse=', '), ', ',
 					paste(paste(names(e$params), e$params, sep='='), collapse=', '),
-											 ')',sep=' '), 
+											 ')',sep=''), 
 					cont=script.text)
 	} else {
 		run <- FALSE
-		mcmc.set <- get.tfr.mcmc(sim.dir=params$sim.dir)
+		mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(sim.dir=params$sim.dir))
 		iter <- get.total.iterations(mcmc.set$mcmc.list, burnin=params$burnin)
 		if (iter < 0) gmessage('Number of iterations is smaller than burnin. Change the value of burnin.',
 							cont=h$action$mw)
@@ -671,15 +665,16 @@ computeConvergenceDiag <- function(h, ...) {
 					icon='question', parent=h$action$mw,
 					handler=function(h1, ...) run <<- TRUE)
 			} else run <- TRUE
-			if(run) do.call('tfr.diagnose', c(params))
+			if(run) do.call(paste(type, '.diagnose', sep=''), c(params))
 		}
 	}
 }
 
 showConvergenceDiag <- function(h, ...) {
 	e <- h$action$env
+	type <- h$action$type
 	dir <- svalue(e$sim.dir)
-	diag.all <- get.tfr.convergence.all(dir)
+	diag.all <- do.call(paste('get.', type, '.convergence.all', sep=''), list(dir))
 	ldiag <- length(diag.all)
 	if(ldiag <=0) {
 		gmessage(paste('There is no available convergence diagnostics in', dir), cont=h$action$mw)

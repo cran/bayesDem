@@ -1,3 +1,18 @@
+1.2-0 (01/19/2011)
+-----
+Various functionality added to the Life Expectancy tab.
+
+1.1-2 (12/03/2010)
+-----
+In Life Expectancy tab:
+- Tabs for extra countries in 'Run MCMC' and 'Make predictions' added.
+
+- Feature of creating world maps added.
+
+1.1-1 (11/17/2010)
+-----
+Tab for Life Expectancy added.
+
 1.1-0 (10/14/2010)
 -----
 'Edit Predictions' tab added to the 'Make Predictions' tab.

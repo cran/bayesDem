@@ -3,16 +3,11 @@
 tfrPredTab <- function(tfr.pred, main.win, wpp.year=wpp.year.default) {
 	eTFRp <- new.env()
 
-
 	eTFRp$wpp.year <- wpp.year
 	
-	sim.g <- ggroup(horizontal=TRUE, cont=tfr.pred)
-	glabel("Simulation directory:", cont=sim.g)
-	glabel("<span color='red'>*</span>", markup=TRUE, cont=sim.g)
-	eTFRp$sim.dir <- gfilebrowse(eval(formals(run.tfr.mcmc)$output.dir), type='selectdir', 
-					  width=40, quote=FALSE, 
-					  cont=sim.g)
-	create.info.button('sim.dir', sim.g, main.win, eTFRp)
+	create.sim.dir.widget(env=eTFRp, parent=tfr.pred, type='tfr', 
+				main.win=main.win,
+				default=eval(formals(run.tfr.mcmc)$output.dir))
 	
 	eTFRp$nb <- gnotebook(cont=tfr.pred, expand=TRUE)
 	# Run MCMC group
@@ -30,7 +25,7 @@ tfrPredTab <- function(tfr.pred, main.win, wpp.year=wpp.year.default) {
 							horizontal=FALSE, cont=eTFRp$nb, spacing=10)
 	eTFRp$pred.g.env <- TFRnewPred.group(eTFRp$pred.g, main.win, parent=eTFRp)
 	
-	# Data group
+	# Result group
 	eTFRp$result.g <- ggroup(label="<span color='#B40404'>Explore results</span>", markup=TRUE,
 							horizontal=FALSE, cont=eTFRp$nb)
 	eTFRp$result.g.env <- TFRresults.group(eTFRp$result.g, main.win, parent=eTFRp)

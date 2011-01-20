@@ -20,13 +20,22 @@ create.help.button <- function(topic, package, parent.group, parent.window) {
 	gbutton(action=helpaction, cont=parent.group)
 }
 
-create.info.button <- function(dir.widget.name, parent.group, parent.window, env) {
+create.sim.dir.widget <- function(env, parent, main.win, type, default, dir.widget.name='sim.dir') {
+	sim.g <- ggroup(horizontal=TRUE, cont=parent)
+	glabel("Simulation directory:", cont=sim.g)
+	glabel("<span color='red'>*</span>", markup=TRUE, cont=sim.g)
+	env[[dir.widget.name]] <- gfilebrowse(default, type='selectdir', width=40, quote=FALSE, cont=sim.g)
+	create.info.button(dir.widget.name, sim.g, main.win, env, type=type)
+}
+
+create.info.button <- function(dir.widget.name, parent.group, parent.window, env, type) {
 	infoaction <- gaction(label='Info', icon='info', handler=show.summary,
-					action=list(mw=parent.window, env=env, dir.widget.name=dir.widget.name))
+					action=list(mw=parent.window, env=env, dir.widget.name=dir.widget.name,
+								type=type))
 	gbutton(action=infoaction, cont=parent.group)
 }
 
-create.graphics.window <- function(parent, title='', dpi=80) {
+create.graphics.window <- function(parent, title='', dpi=80, ps=10, ...) {
 	e <- new.env()
 	win <- gwindow(title, parent=parent, horizontal=FALSE)
 	g <- ggroup(cont=win, horizontal=FALSE, expand=TRUE)
@@ -36,7 +45,7 @@ create.graphics.window <- function(parent, title='', dpi=80) {
 	e$type <- gdroplist(c("pdf", "postscript", "png", "jpeg", "tiff", "bmp"), cont=g1)
 	gb <- gbutton('Save', cont=g1)
 	g2 <- ggroup(cont=g, horizontal=TRUE, expand=TRUE)
-	ggraphics(cont=g2, ps=10, dpi=dpi)
+	ggraphics(cont=g2, ps=ps, dpi=dpi, ...)
 	addHandlerClicked(gb, handler=saveGraph, action=list(mw=win, env=e, dpi=dpi, dev=dev.cur()))
 	Sys.sleep(1)
 	return(g)
@@ -84,11 +93,12 @@ saveGraph <- function(h, ...){
 show.summary <- function(h, ...) {
 	e <- h$action$env
 	dir <- svalue(e[[h$action$dir.widget.name]])
+	type <- h$action$type
 	warn <- getOption('warn')
 	options(warn=-1) # disable warning messages
-	mcmc.set <- get.tfr.mcmc(dir)
+	mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(dir))
 	# get prediction
-	pred <- get.tfr.prediction(sim.dir=dir)
+	pred <- do.call(paste('get.', type, '.prediction', sep=''), list(sim.dir=dir))
 	options(warn=warn)
 	
 	con <- textConnection("info", "w", local=TRUE)
@@ -193,4 +203,25 @@ makeDFView <- function(df, container, f=NULL, ...) {
 
 	add(container, sw, expand=TRUE)
 	list(model=model, view=view)
+}
+
+get.data.path <- function(type) {
+	package <- NULL
+	if(type=='tfr') package <- 'bayesTFR'
+	else{if(type=='e0') package <- 'bayesLife'}
+	if(is.null(package)) stop('Wrong type ', type, '. Only "tfr" and "e0" allowed.')
+	return(file.path(.find.package(package), "data"))
+}
+
+get.tfr.UN.data <- function(type, mcmc.set) {
+	path <- get.data.path(type)
+	file.name <- file.path(path, paste('UN', mcmc.set$meta$wpp.year, '.txt', sep=''))
+	return(read.tfr.file(file=file.name))
+}
+
+get.e0.UN.data <- function(type, mcmc.set) {
+	path <- get.data.path(type)
+	file.name <- file.path(path, paste('UN', mcmc.set$meta$wpp.year, 'e0', 
+								mcmc.set$meta$gender, '.txt', sep=''))
+	return(read.tfr.file(file=file.name))
 }

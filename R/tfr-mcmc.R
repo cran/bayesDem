@@ -105,7 +105,7 @@ mcmc.run <- function(h, ...) {
 		params[['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
 	}
 	if (h$action$script) {
-		script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		commands <- paste('m <- run.tfr.mcmc(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
 					paste(paste(names(e$params), e$params, sep='='), collapse=', '),
 											 ')',sep=' ')
@@ -537,7 +537,7 @@ mcmc.extra.countries.group <- function(g, main.win, parent) {
 				action=list(mw=main.win, env=e))
 	
 	e$tfr.g2 <- ggroup(horizontal=TRUE, cont=e$tfr.g)
-	glabel("User-defined TFR file:", cont=e$tfr.g2)
+	glabel("User-defined TFR-file:", cont=e$tfr.g2)
 	e$my.tfr.file <- gfilebrowse(eval(defaults$my.tfr.file), type='open', 
 					  width=40, quote=FALSE, cont=e$tfr.g2)
 					  
@@ -578,7 +578,7 @@ mcmc.run.extra <- function(h, ...) {
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	params[['countries']] <- e$selected.extra.countries
 	if (h$action$script) {
-		script.text <- gwindow('bayeTFR commands', parent=h$action$mw)
+		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		gtext(paste('run.tfr.mcmc.extra(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
 											 ')',sep=' '), 
 					cont=script.text)
@@ -596,22 +596,21 @@ get.wpp.years <- function() {
 	return(years)
 }
 
-get.table.of.countries.from.locfile <- function(sim.dir, sorted=TRUE) {
-	mcmc.set <- get.tfr.mcmc(sim.dir=sim.dir)
+get.table.of.countries.from.locfile <- function(sim.dir, sorted=TRUE, type='tfr') {
+	mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(sim.dir=sim.dir))
 	if(is.null(mcmc.set)) {
-		gmessage('Simulation directory contains no valid TFR MCMC results.', title='Input Error',
+		gmessage('Simulation directory contains no valid MCMC results.', title='Input Error',
 					icon='error')
 		return(NULL)
 	}
 	wpp.year <- mcmc.set$meta$wpp.year
-		
-	path <- file.path(.find.package("bayesTFR"), "data")
+	
+	path <- get.data.path(type)
 	# get the UN TFR-file
-	tfr.file.name <- file.path(path, paste('UN', wpp.year, '.txt', sep=''))
-	tfr.data <- read.tfr.file(file=tfr.file.name)
+	tfr.data <- do.call(paste('get.', type, '.UN.data', sep=''), list(type=type, mcmc.set=mcmc.set))
 	codes <- tfr.data[,'country_code']
 	# filter out countries used already for an estimation
-	used.codes <- mcmc.set$meta$regions$country_code[1:mcmc.set$meta$nr_countries_estimation]
+	used.codes <- mcmc.set$meta$regions$country_code[1:(bayesTFR:::get.nr.countries.est(mcmc.set$meta))]
 	codes <- codes[!is.element(codes, used.codes)] # codes not used in the estimation
 			
 	# get the UN location file
@@ -645,7 +644,8 @@ multiSelectCountryMenu <- function(h, ...) {
 		} else {
 			extra.country.table <- get.table.of.countries.from.locfile(
 												sim.dir=svalue(h$action$env$sim.dir),
-												sorted=FALSE)
+												sorted=FALSE, 
+												type=if(is.null(h$action$type)) 'tfr' else h$action$type)
 			if(dim(extra.country.table)[1] != dim(h$action$env$extra.country.table)[1]) {
 				dispose(h$action$env$extra.country.sel.win)
 				new.window <- TRUE
@@ -657,7 +657,8 @@ multiSelectCountryMenu <- function(h, ...) {
 	}
 	if(new.window) {
 		sim.dir.used <- svalue(h$action$env$sim.dir)
-		country.table <- get.table.of.countries.from.locfile(sim.dir=sim.dir.used, sorted=FALSE)
+		country.table <- get.table.of.countries.from.locfile(sim.dir=sim.dir.used, sorted=FALSE,
+								type=if(is.null(h$action$type)) 'tfr' else h$action$type)
 		if (is.null(country.table)) return(NULL)
 		h$action$env$sim.dir.used <- sim.dir.used
 		h$action$env$extra.country.table <- country.table
