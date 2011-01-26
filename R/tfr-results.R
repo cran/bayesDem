@@ -216,16 +216,19 @@ create.convergence.tab <- function(parent, sim.dir, type='tfr', package='bayesTF
 	e$keep.thin.mcmc <- gcheckbox('Keep thinned MCMCs', checked = defaults$keep.thin.mcmc, cont=g3)
 	addSpace(g3, 5)
 	e$verbose <- gcheckbox('Verbose', checked = defaults$verbose, cont=g3)
-	g4 <- glo <- glayout(cont=g34f)
+	#g4 <- glo <- glayout(cont=g34f)
+	g4 <- ggroup(cont=g34f, horizontal=TRUE)
 	l <- 1
-	glo[l,2] <- glabel('Proportion of countries included in the diagnostics:', cont=g4)
-	l <- 2
-	glo[l,1] <- e$express <- gcheckbox('Express', checked=defaults$express, cont=g4,
+	#glo[l,1] <- 
+	e$express <- gcheckbox('Express', checked=defaults$express, cont=g4,
 						handler=function(h,...) enabled(e$country.sampling.prop) <- !svalue(h$obj))
-	#addSpace(g2, 10) 
-	#g2a <- ggroup(horizontal=FALSE, cont=g2)
-	
-	glo[l,2] <- e$country.sampling.prop <- gslider(from=0, to=1, by=1/200, value=1, cont=g4)
+	addSpace(g4, 5)
+	#glo[l,2] <- 
+	glabel('Proportion of countries included in the diagnostics (0-1):', cont=g4)
+	#glo[l,3] <- 
+	e$country.sampling.prop <- gedit(1, width=5, cont=g4)
+	# This line is commented out because (for some reason) on Windows OS it causes the main window to go out of whack.
+	#glo[l,2] <- (e$country.sampling.prop <- gslider(from=0, to=1, by=1/200, value=1, cont=g4))
 	enabled(e$country.sampling.prop) <- !defaults$express
 	
 	addSpring(parent)
@@ -646,7 +649,7 @@ computeConvergenceDiag <- function(h, ...) {
 						text=c('sim.dir'),
 						logical=c('express', 'verbose', 'keep.thin.mcmc'))
 	params <- get.parameters(param.names, e, quote=h$action$script)
-	if(params$express || params$country.sampling.prop == 1) params$country.sampling.prop <- NULL
+	if(params$express || params$country.sampling.prop >= 1) params$country.sampling.prop <- NULL
 	if (h$action$script) {
 		script.text <- gwindow(paste(h$action$package, 'commands'), parent=h$action$mw)
 		gtext(paste(type, '.diagnose(', paste(paste(names(params), params, sep='='), collapse=', '), ', ',

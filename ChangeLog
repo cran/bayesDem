@@ -1,3 +1,8 @@
+1.2-1 (01/26/2011)
+-----
+Slider in the convergence tabs replaced by a text field, since (under R 2.12.1) it caused the
+main window go out of whack (under Windows OS).
+
 1.2-0 (01/19/2011)
 -----
 Various functionality added to the Life Expectancy tab.
