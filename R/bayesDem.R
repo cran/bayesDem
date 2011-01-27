@@ -24,8 +24,7 @@ bayesDem.go <- function(wpp.year=wpp.year.default) {
 
 	tfrPredTab(tfr.pred, main.win, wpp.year=wpp.year)
 
-	# Not implemented tabs
-	# TFR life expectancy
+	# Life expectancy
 	e0w <- ggroup(label="<span weight='bold' color='blue'>Projection of Life Expectancy</span>", 
 		markup=TRUE, horizontal=FALSE, cont=main.notebook)
 	e0PredTab(e0w, main.win)
