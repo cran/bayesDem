@@ -1,4 +1,4 @@
-bayesDem.go <- function(wpp.year=wpp.year.default) {
+bayesDem.go <- function(wpp.year.tfr=tfr.wpp.year.default, wpp.year.e0=e0.wpp.year.default) {
 		
 	quit.bayesdem <- function(h, ...) {
 		dispose(main.win)
@@ -22,12 +22,12 @@ bayesDem.go <- function(wpp.year=wpp.year.default) {
 	tfr.pred <- ggroup(label="<span weight='bold' color='blue'>Projection of Total Fertility Rate</span>", 
 		markup=TRUE, horizontal=FALSE, cont=main.notebook)
 
-	tfrPredTab(tfr.pred, main.win, wpp.year=wpp.year)
+	tfrPredTab(tfr.pred, main.win, wpp.year=wpp.year.tfr)
 
 	# Life expectancy
 	e0w <- ggroup(label="<span weight='bold' color='blue'>Projection of Life Expectancy</span>", 
 		markup=TRUE, horizontal=FALSE, cont=main.notebook)
-	e0PredTab(e0w, main.win)
+	e0PredTab(e0w, main.win, wpp.year=wpp.year.e0)
 
 	svalue(main.notebook)<- 1
 	

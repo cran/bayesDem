@@ -1,7 +1,8 @@
 # defaults
 ###########
 guiToolkit.default <- 'RGtk2'
-wpp.year.default <- 2008
+tfr.wpp.year.default <- 2010
+e0.wpp.year.default <- 2008
 
 
 

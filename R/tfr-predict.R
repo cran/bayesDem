@@ -90,6 +90,8 @@ run.tfr.prediction <- function(h, ...)
 						numtext=c('save.as.ascii') #can be both - numeric or text
 						)
 	params <- get.parameters(param.names, e, h$action$script)
+	if(is.null(params$rho)) params$rho <- NA
+	if(is.null(params$sigmaAR1)) params$sigmaAR1 <- NA
 	if(params$use.diagnostics) {
 		params[['burnin']] <- NULL
 		params[['thin']] <- NULL

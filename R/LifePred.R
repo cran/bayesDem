@@ -1,4 +1,4 @@
-e0PredTab <- function(e0w, main.win, wpp.year=wpp.year.default) {
+e0PredTab <- function(e0w, main.win, wpp.year) {
 	eLifeExp <- new.env()
 	eLifeExp$wpp.year <- wpp.year
 	

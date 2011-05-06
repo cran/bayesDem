@@ -69,3 +69,13 @@ e0mcmc.continue <- function(h, ...) {
 		#	e0.predict(m, use.diagnostics=TRUE, replace.output=TRUE)
 	}
 }
+
+.get.defaults.for.auto.cont.e0 <- function(e) {
+	mcmc.set <- get.e0.mcmc(sim.dir=svalue(e$output.dir))
+	if(is.null(mcmc.set)) {
+		gmessage('Simulation directory contains no valid e0 MCMCs.', title='Input Error',
+					icon='error')
+		return(NULL)
+	}
+	return(mcmc.set$meta$auto.conf)
+}

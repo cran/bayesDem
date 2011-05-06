@@ -77,9 +77,26 @@ TFRresults.group <- function(g, main.win, parent) {
 						'lower 20'=0.4, 'upper 20'=0.6
 						)
 	e$map.percentile <- gdroplist(names(e$percentiles), cont=map.set.g1)
-	addSpace(map.set.g1, 10)
-	#map.set.g2 <- ggroup(horizontal=TRUE, cont=map.set.f)
+	addSpace(map.set.g1, 5)
+	glabel('Measure:', cont=map.set.g1)
+	e$map.measure <- gdroplist(c('TFR', 'lambda', bayesTFR:::tfr.parameter.names.cs.extended()), cont=map.set.g1)
+	addSpace(map.set.g1, 5)
 	e$map.same.scale <- gcheckbox('Same scale for all maps', checked=TRUE, cont=map.set.g1)
+	
+	map.set.g3 <- ggroup(horizontal=TRUE, cont=map.set.f)
+	glabel('Bounds:    ', cont=map.set.g3)
+	e$map.bounds <- gdroplist(c(80, 90, 95, 60, 50, 40, 20), cont=map.set.g3)
+	glabel('%', cont=map.set.g3)
+	
+	map.set.g2 <- ggroup(horizontal=TRUE, cont=map.set.f)
+	glabel('Use R package:', cont=map.set.g2)
+	e$map.package <- gradio(c('rworldmap', 'googleVis'), horizontal = TRUE, 
+						handler=function(h, ...) {
+							enabled(e$map.bounds) <- svalue(h$obj) == 'googleVis';
+							enabled(e$map.same.scale) <- svalue(h$obj) == 'rworldmap'}, 
+						cont=map.set.g2)
+	enabled(e$map.bounds) <- svalue(e$map.package) == 'googleVis'
+	enabled(e$map.same.scale) <- svalue(e$map.package) == 'rworldmap'
 	addSpring(map.g)
 	map.bg <- ggroup(horizontal=TRUE, cont=map.g)
 	create.help.button(topic='tfr.map', package='bayesTFR', parent.group=map.bg,
@@ -91,6 +108,8 @@ TFRresults.group <- function(g, main.win, parent) {
 	GraphB.map <- gaction(label=' Show Map ', handler=showMap, 
 						action=list(mw=main.win, env=e, script=FALSE))
 	gbutton(action=GraphB.map, cont=map.bg)
+	addHandlerChanged(e$map.measure, 
+					handler=function(h,...) enabled(e$map.same.scale) <- svalue(h$obj) == 'TFR')
 	
 	############################################
 	# DL Curves
@@ -499,64 +518,110 @@ showMap <- function(h, ...) {
 	param.names1 <- list(text='sim.dir')
 	param.pred <- get.parameters(param.names1, env=param.env, quote=h$action$script, retrieve.from.widgets=FALSE)
 	same.scale <- svalue(e$map.same.scale)
+	par.name <- svalue(e$map.measure)
+	bounds <- svalue(e$map.bounds)
+	package <- svalue(e$map.package)
+	map.function <- if(package == 'rworldmap') 'tfr.map' else 'tfr.map.gvis'
 	if(h$action$script) {
 		cmd <- paste('pred <- get.tfr.prediction(', paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
 						')\n', sep='')
-		cmd <- paste(cmd, "param.map <- get.tfr.map.parameters(pred, same.scale=", same.scale,
+		if (par.name == 'TFR') {
+			 if(package == 'rworldmap') {
+				cmd <- paste(cmd, "param.map <- get.tfr.map.parameters(pred, same.scale=", same.scale,
 					", quantile=", quantile, ")\n", sep="")
-	} else {
-		pred <- do.call('get.tfr.prediction', param.pred)
-		param.map <- get.tfr.map.parameters(pred, same.scale=same.scale, quantile=quantile)
-		cmd <- ''
-	}
-	
-	cmd <- paste(cmd, 'do.call("tfr.map", param.map)', sep='')
-	if (h$action$script) {
+				cmd <- paste(cmd, 'do.call("', map.function, '", param.map)', sep='')
+			} else {
+				cmd <- paste(cmd, map.function, '(pred, quantile=', quantile, ', pi=', bounds, ')', sep='')
+			}
+		} else {
+			cmd <- paste(cmd, map.function, '(pred, quantile=', quantile, ', par.name="', par.name, '"', sep='')
+			cmd <- paste(cmd, if (package == 'googleVis') paste(', pi=', bounds, sep='') else '', sep='')
+			cmd <- paste(cmd, if (par.name == 'lambda' && package == 'rworldmap') 
+						', catMethod="pretty",  numCats=20' else '', ')', sep='')
+		}
 		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		gtext(cmd, cont=script.text)
 	} else {
+		pred <- do.call('get.tfr.prediction', param.pred)
+		if (par.name == 'TFR' && package == 'rworldmap') {
+			param.map <-  get.tfr.map.parameters(pred, same.scale=same.scale, quantile=quantile)
+		} else {
+			param.map <- list(pred=pred, quantile=quantile)
+			if (par.name != 'TFR')
+				param.map[['par.name']]<- par.name
+				if(par.name=='lambda' && package == 'rworldmap') 
+					param.map <- c(param.map, list(catMethod='pretty',  numCats=20))
+		}
+		if(package == 'rworldmap') param.map[['device']] <- 'dev.new'
+		if (package == 'googleVis') param.map[['pi']] <- bounds
 		g <- create.graphics.map.window(parent=h$action$mw, pred=pred, params=param.map, percentile=percentile, 
-										title="World Map")
+										is.gvis= package == 'googleVis', title="World Map")
 	}
 }
 
 	
-create.graphics.map.window <- function(parent, pred, params, percentile, title='', type='tfr', 
+create.graphics.map.window <- function(parent, pred, params, percentile,  is.gvis=FALSE, title='', type='tfr', 
 											main.part=NULL, dpi=80) {
+	meta <- pred$mcmc.set$meta
+	est.periods <- bayesTFR:::get.tfr.periods(meta)
+	proj.periods <- bayesTFR:::get.prediction.periods(meta, pred$nr.projections+1)
+	
 	newMap <- function(h, ...) {
-		dev.set(h$action$dev)
-		do.show.map(pred, as.numeric(svalue(proj.year)), "dev.cur", h$action$map.pars)
+		if (!is.null(h$action$dev)) dev.set(h$action$dev)
+		if(!is.null(h$action$map.pars$device)) h$action$map.pars$device <- "dev.cur"
+		do.show.map(as.numeric(svalue(proj.year)), h$action$map.pars)
 	}
-	do.show.map <- function(pred, projection.year, device, map.pars, ...) {
-		is.median <- percentile == 'median'
-		main <- paste(projection.year, if(is.null(main.part)) toupper(type) else main.part, ":",
-					if(is.median) percentile else paste(substr(percentile, 1, 5), ' bound of ',
-								substr(percentile, 7,8), '% interval', sep=''))
-		do.call(paste(type, '.map', sep=''), 
-				c(map.pars, list(projection.year=projection.year, device=device, main=main)))
+	do.show.map <- function(projection.year, map.pars, update.control.win=TRUE) {
+		#is.median <- percentile == 'median'
+		ind.proj <- bayesTFR:::get.predORest.year.index(pred, projection.year)
+		#projection.index <- ind.proj['index']
+		is.projection <- ind.proj['is.projection']
+		if(update.control.win)
+			svalue(year.label) <- if(is.projection) 'Projection year:' else 'Estimation year:'
+		#measure <- if(is.null(params$par.name)) toupper(type) else params$par.name
+		#main <- paste(if(is.projection) proj.periods[projection.index] else est.periods[projection.index], 
+		#			if(is.null(main.part)) measure else main.part, ":",
+		#			if(is.median) percentile else paste(substr(percentile, 1, 5), ' bound of ',
+		#						substr(percentile, 7,8), '% interval', sep=''))
+		do.call(paste(type, '.map', if(is.gvis) '.gvis' else '', sep=''), 
+				c(map.pars, list(projection.year=projection.year #, main=main
+					)))
 	}
 	close.map <- function(h, ...) dev.off(h$action$dev)
-	years <- as.numeric(dimnames(pred$quantiles)[[3]])
-	do.show.map(pred, years[1], 'dev.new', params)
+	
+	if(is.gvis && !is.null(params[['par.name']])) {
+		do.show.map(meta$present.year, params, update.control.win=FALSE)
+		return(NULL)
+	}
+	lest.periods <- length(est.periods)
+	periods <- c(est.periods[-lest.periods], # remove the present period, otherwise doubled 
+				 proj.periods)
+	est.years <- bayesTFR:::get.estimation.years(meta)
+	years <- c(est.years[-lest.periods], bayesTFR:::get.all.prediction.years(pred))
 	e <- new.env()
 	win <- gwindow(paste(title, 'Control Panel:', percentile), height=70, parent=parent, horizontal=FALSE)
 	g <- ggroup(cont=win, horizontal=FALSE, expand=TRUE)
 	g1 <- ggroup(cont=g, horizontal=TRUE)
-	glabel("Projection year:", cont=g1)
-	proj.year <- gspinbutton(from= min(years), to=max(years), by=5, cont=g1)
-	addSpring(g1)
-	glabel("Output type:", cont=g1)
-	e$type <- gdroplist(c("pdf", "postscript", "png", "jpeg", "tiff", "bmp"), cont=g1)
-	height <- list()
-	height[['png']] <- height[['jpeg']] <- height[['tiff']] <- height[['bmp']] <- 500
-	height[['pdf']] <- height[['postscript']] <- 7
-	e$height <- height
-	e$width <- 'default'
-	gb <- gbutton('Save', cont=g1)
-	
-	addHandlerClicked(gb, handler=saveGraph, action=list(mw=win, env=e, dpi=dpi, dev=dev.cur()))
-	addHandlerChanged(proj.year, handler=newMap, action=list(dev=dev.cur(), map.pars=params))
-	addHandlerDestroy(win, handler=close.map, action=list(dev=dev.cur()))
+	year.label <- glabel("Projection year:", cont=g1)
+	proj.year <- gspinbutton(from= min(years), to=max(years), by=5, value=years[lest.periods], cont=g1)
+	if(!is.null(params$par.name)) enabled(proj.year) <- FALSE
+	do.show.map(meta$present.year, params)
+	if (!is.gvis) {
+		addSpring(g1)
+		glabel("Output type:", cont=g1)
+		e$type <- gdroplist(c("pdf", "postscript", "png", "jpeg", "tiff", "bmp"), cont=g1)
+		height <- list()
+		height[['png']] <- height[['jpeg']] <- height[['tiff']] <- height[['bmp']] <- 500
+		height[['pdf']] <- height[['postscript']] <- 7
+		e$height <- height
+		e$width <- 'default'
+		gb <- gbutton('Save', cont=g1)
+		addHandlerClicked(gb, handler=saveGraph, action=list(mw=win, env=e, dpi=dpi, dev=dev.cur()))
+		addHandlerChanged(proj.year, handler=newMap, action=list(dev=dev.cur(), map.pars=params))
+		addHandlerDestroy(win, handler=close.map, action=list(dev=dev.cur()))
+	} else {
+		addHandlerChanged(proj.year, handler=newMap, action=list(map.pars=params))
+	}
 	return(g)
 }
 	

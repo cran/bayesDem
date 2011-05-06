@@ -31,9 +31,7 @@ e0mcmc.all.countries.group <- function(g, main.win, parent) {
 	e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', cont=auto.g,
 							handler=function(h,...){.enable.auto.run(svalue(h$obj), e)})
 	e$auto.conf.b <- gbutton(' Configure auto run ', cont=auto.g, handler=configure.auto.run, 
-				action=list(mw=main.win, env=e, cont.run=FALSE))
-	enabled(e$run.auto) <- FALSE
-	enabled(e$auto.conf.b) <- FALSE
+				action=list(mw=main.win, env=e, cont.run=FALSE, type='e0'))
 	iter.g1 <- ggroup(horizontal=TRUE, cont=mcmc.g)
 	glabel("Number of chains:", cont=iter.g1)
 	e$nr.chains <- gedit(defaults$nr.chains, width=2, cont=iter.g1)
@@ -41,14 +39,14 @@ e0mcmc.all.countries.group <- function(g, main.win, parent) {
 	e$iter <- gedit(defaults$iter, width=7, cont=iter.g1)
 	glabel("Thin:", cont=iter.g1)
 	e$thin <- gedit(defaults$thin, width=2, cont=iter.g1)
-	#.enable.auto.run(defaults$iter=='auto', e)
+	.enable.auto.run(defaults$iter=='auto', e)
 	glabel("RNG seed:", cont=iter.g1)
 	e$seed <- gedit(defaults$seed, width=4, cont=iter.g1)
 		
 	time.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, cont=g)
 	time.g1 <- ggroup(horizontal=TRUE, cont=time.g)
-	glabel("Gender:", cont=time.g1)
-	e$gender <- gdroplist(c('Female', 'Male'), cont=time.g1, selected=2)
+	glabel("Sex:", cont=time.g1)
+	e$sex <- gdroplist(c('Female', 'Male'), cont=time.g1, selected=2)
 	addSpace(time.g1, 10)
 	glabel("Start year:", cont=time.g1)
 	e$start.year <- gedit(defaults$start.year, width=4, cont=time.g1)
@@ -136,11 +134,10 @@ e0mcmc.run <- function(h, ...) {
 	param.names <- list(numeric=c('buffer.size', 'nr.nodes', 'iter', 'thin', 'nr.chains', 'start.year', 
 									'present.year', 'seed'),
 						text=c('output.dir', 'my.e0.file',
-								'gender'),
+								'sex'),
 						logical=c('replace.output', 'verbose', 'parallel'))
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	params[['wpp.year']] <- h$action$wpp.year
-	params[['gender']] <- if(h$action$script) sQuote(substr(params[['gender']], 2, 2)) else substr(params[['gender']], 1, 1)
 	run.auto <- svalue(e$run.auto)
 	if (run.auto) {
 		params[['auto.conf']] <- e$auto.conf
@@ -224,10 +221,10 @@ e0mcmc.advance.settings <- function(h, ...) {
 		defaults <- get.defaults()
 		for (par in param.names) {
 			if(!is.null(h$action$env$adv.set.env[[par]])) {
-			if(length(defaults[[par]])>1) {
-				for (i in 1:length(defaults[[par]])) svalue(h$action$env$adv.set.env[[par]][[i]]) <- defaults[[par]][i]
-			} else 
-				svalue(h$action$env$adv.set.env[[par]]) <- defaults[[par]]
+				if(length(defaults[[par]])>1) {
+					for (i in 1:length(defaults[[par]])) svalue(h$action$env$adv.set.env[[par]][[i]]) <- defaults[[par]][i]
+				} else 
+					svalue(h$action$env$adv.set.env[[par]]) <- defaults[[par]]
 			}
 		}
 		widget.defaults <- h$action$env$adv.set.env$widget.defaults
@@ -239,32 +236,38 @@ e0mcmc.advance.settings <- function(h, ...) {
 	}
 	
 	set.advance.pars <- function(h2, ...) {
+		# The order in which the widgets are handled must be the same as in function init.widget.value.pairs.
 		params <- widget.value <- list()		
 		array.pars <- c('a', 'delta', 'tau')
+		counter <- 1
 		for (i in 1:6) {
 			for(par in array.pars) {
 				value <- svalue(h$action$env$adv.set.env[[par]][[i]])
 				params[[par]] <- c(params[[par]], as.numeric(value))
-				widget.value <- c(widget.value, list(c(h$action$env$adv.set.env[[par]][[i]], value)))
+				h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+				#widget.value <- c(widget.value, list(c(h$action$env$adv.set.env[[par]][[i]], value)))
+				counter <- counter + 1
 			}
 		}
 		linked.pars.list <- h$action$env$adv.set.env$linked.pars.list
-		this.par.list <- linked.pars.list
 		for(par in names(linked.pars.list)) {
 			if(is.list(linked.pars.list[[par]])) {
 				for(i in 1:length(linked.pars.list[[par]])) {
 					value <- svalue(linked.pars.list[[par]][[i]])
 					params[[par]] <- c(params[[par]], if(nchar(value)==0) NULL else as.numeric(value))
-					widget.value <- c(widget.value, list(c(linked.pars.list[[par]][[i]], value)))
+					h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+					#widget.value <- c(widget.value, list(c(linked.pars.list[[par]][[i]], value)))
+					counter <- counter + 1
 				} 
 			} else {
 				value <- svalue(linked.pars.list[[par]])
 				params[[par]] <- if(nchar(value)==0) NULL else as.numeric(value)
-				widget.value <- c(widget.value, list(c(linked.pars.list[[par]], value)))
+				h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+				counter <- counter + 1
+				#widget.value <- c(widget.value, list(c(linked.pars.list[[par]], value)))
 			}
 		}
 		linked.pars.tuple <- h$action$env$adv.set.env$linked.pars.tuple
-		this.par.tuple <- linked.pars.tuple
 		for(par in names(linked.pars.tuple)) {
 			for(item in 1:2) {
 				if(is.list(linked.pars.tuple[[par]][[item]])) {
@@ -273,28 +276,68 @@ e0mcmc.advance.settings <- function(h, ...) {
 					for(i in 1:length(linked.pars.tuple[[par]][[item]])) {
 						value <- svalue(linked.pars.tuple[[par]][[item]][[i]])
 						params[[par]][[item]][i] <-if(nchar(value)==0) NULL else as.numeric(value)
-						widget.value <- c(widget.value, list(c(linked.pars.tuple[[par]][[item]][[i]], value)))
+						h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+						counter <- counter + 1
+						#widget.value <- c(widget.value, list(c(linked.pars.tuple[[par]][[item]][[i]], value)))
 					} 
 				} else {
 					if(item==1) params[[par]] <- c()
 					value <- svalue(linked.pars.tuple[[par]][[item]])
 					params[[par]][item] <- if(nchar(value)==0) NULL else as.numeric(value)
-					widget.value <- c(widget.value, list(c(linked.pars.tuple[[par]][[item]], value)))
+					h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+					counter <- counter + 1
+					#widget.value <- c(widget.value, list(c(linked.pars.tuple[[par]][[item]], value)))
 				}
 			}
 		}
 		rest.par.names <- setdiff(param.names, 
 								union(union(array.pars, names(linked.pars.list)), names(linked.pars.tuple)))
 		params <- c(params, get.parameters(list(numvector=rest.par.names), env=h$action$env$adv.set.env))
-		for (par in rest.par.names) widget.value <- c(widget.value, list(c(h$action$env$adv.set.env[[par]], 
-				if(is.null(params[[par]])) '' else params[[par]])))
+		for (par in rest.par.names) {
+			h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- if(is.null(params[[par]])) '' else params[[par]]
+			counter <- counter + 1
+			#widget.value <- c(widget.value, list(c(h$action$env$adv.set.env[[par]], 
+			#		if(is.null(params[[par]])) '' else params[[par]])))
+		}
 		h$action$env$params <- params
-		h$action$env$adv.set.env$widget.value.pairs <- widget.value
+		#h$action$env$adv.set.env$widget.value.pairs <- widget.value
 		visible(h$action$env$adv.set.win) <- FALSE
 	}
 	
-	
-	if (!is.null(h$action$env$adv.set.win)) { #Advanced Parameters window exists
+	init.widget.value.pairs <- function(e) {
+		# The order in which the widgets are handled must be the same as in function set.advance.pars.
+		widget.value <- list()		
+		array.pars <- c('a', 'delta', 'tau')
+		for (i in 1:6) {
+			for(par in array.pars) {
+				widget.value <- c(widget.value, list(c(e[[par]][[i]], 0)))
+			}
+		}
+		for(par in names(e$linked.pars.list)) {
+			if(is.list(e$linked.pars.list[[par]])) {
+				for(i in 1:length(e$linked.pars.list[[par]])) 
+					widget.value <- c(widget.value, list(c(e$linked.pars.list[[par]][[i]], 0)))
+			} else {
+				widget.value <- c(widget.value, list(c(e$linked.pars.list[[par]], 0)))
+			}
+		}
+		for(par in names(e$linked.pars.tuple)) {
+			for(item in 1:2) {
+				if(is.list(e$linked.pars.tuple[[par]][[item]])) {
+					for(i in 1:length(e$linked.pars.tuple[[par]][[item]])) 
+						widget.value <- c(widget.value, list(c(e$linked.pars.tuple[[par]][[item]][[i]], 0)))
+				} else 
+					widget.value <- c(widget.value, list(c(e$linked.pars.tuple[[par]][[item]], 0)))
+			}
+		}
+		rest.par.names <- setdiff(param.names, 
+								union(union(array.pars, names(e$linked.pars.list)), names(e$linked.pars.tuple)))
+		for (par in rest.par.names) widget.value <- c(widget.value, list(c(e[[par]], 0)))
+		e$widget.value.pairs <- widget.value
+	}
+
+		
+	if (!is.null(h$action$env$adv.set.win) && !h$action$env$adv.set.env$window.destroyed) { #Advanced Parameters window exists
 		if(!is.null(h$action$env$params)) { # OK button previously clicked 
 			for (i in 1:length(h$action$env$adv.set.env$widget.value.pairs)) 
 				svalue(h$action$env$adv.set.env$widget.value.pairs[[i]][[1]]) <- h$action$env$adv.set.env$widget.value.pairs[[i]][[2]]
@@ -531,8 +574,21 @@ e0mcmc.advance.settings <- function(h, ...) {
 	e$linked.pars.list <- linked.pars.list
 	e$linked.pars.tuple <- linked.pars.tuple
 	e$widget.defaults <- widget.defaults
+	init.widget.value.pairs(e)
+	
+		if(!is.null(h$action$env$params)) { # OK button previously clicked 
+			for (i in 1:length(h$action$env$adv.set.env$widget.value.pairs)) {
+				svalue(e$widget.value.pairs[[i]][[1]]) <- h$action$env$adv.set.env$widget.value.pairs[[i]][[2]]
+				e$widget.value.pairs[[i]][[2]] <- h$action$env$adv.set.env$widget.value.pairs[[i]][[2]]
+			}
+		} 
+		
 	visible(adv.set.win) <- TRUE
+	e$window.destroyed <- FALSE
 	h$action$env$adv.set.env <- e
+	
+	addHandlerDestroy(adv.set.win, 
+					handler=function(h1, ...) h$action$env$adv.set.env$window.destroyed <- TRUE)
 	
 	}
 	if(!is.null(h$action$env$adv.set.okhandler)) 

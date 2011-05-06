@@ -170,8 +170,26 @@ e0.show.map.group <- function(g, main.win, parent.env) {
 						'lower 20'=0.4, 'upper 20'=0.6
 						)
 	e$map.percentile <- gdroplist(names(e$percentiles), cont=set.g1)
-	addSpace(set.g1, 10)
+	addSpace(set.g1, 5)
+	glabel('Measure:', cont=set.g1)
+	e$map.measure <- gdroplist(c('e0', bayesLife:::e0.parameter.names.cs.extended()), cont=set.g1)
+	addSpace(set.g1, 5)
 	e$map.same.scale <- gcheckbox('Same scale for all maps', checked=TRUE, cont=set.g1)
+	
+	set.g3 <- ggroup(horizontal=TRUE, cont=set.f)
+	glabel('Bounds:    ', cont=set.g3)
+	e$map.bounds <- gdroplist(c(80, 90, 95, 60, 50, 40, 20), cont=set.g3)
+	glabel('%', cont=set.g3)
+	
+	set.g2 <- ggroup(horizontal=TRUE, cont=set.f)
+	glabel('Use R package:', cont=set.g2)
+	e$map.package <- gradio(c('rworldmap', 'googleVis'), horizontal = TRUE, 
+						handler=function(h, ...) {
+							enabled(e$map.bounds) <- svalue(h$obj) == 'googleVis';
+							enabled(e$map.same.scale) <- svalue(h$obj) == 'rworldmap'}, 
+						cont=set.g2)
+	enabled(e$map.bounds) <- svalue(e$map.package) == 'googleVis'
+	enabled(e$map.same.scale) <- svalue(e$map.package) == 'rworldmap'
 	addSpring(g)
 	bg <- ggroup(horizontal=TRUE, cont=g)
 	create.help.button(topic='e0.map', package='bayesLife', parent.group=bg,
@@ -195,19 +213,41 @@ e0.showMap <- function(h, ...) {
 	param.names1 <- list(text='sim.dir')
 	param.pred <- get.parameters(param.names1, env=param.env, quote=h$action$script, retrieve.from.widgets=FALSE)
 	same.scale <- svalue(e$map.same.scale)
+	par.name <- svalue(e$map.measure)
+	bounds <- svalue(e$map.bounds)
+	package <- svalue(e$map.package)
+	map.function <- if(package == 'rworldmap') 'e0.map' else 'e0.map.gvis'
 	if(h$action$script) {
 		cmd <- paste('pred <- get.e0.prediction(', paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
 						')\n', sep='')
-		cmd <- paste(cmd, "param.map <- get.e0.map.parameters(pred, same.scale=", same.scale,
+		if (par.name == 'e0') {
+			if(package == 'rworldmap') {
+				cmd <- paste(cmd, "param.map <- get.e0.map.parameters(pred, same.scale=", same.scale,
 					", quantile=", quantile, ")\n", sep="")
-		cmd <- paste(cmd, 'do.call("e0.map", param.map)', sep='')
+				cmd <- paste(cmd, 'do.call("', map.function, '", param.map)', sep='')
+			} else {
+				cmd <- paste(cmd, map.function, '(pred, quantile=', quantile, ', pi=', bounds, ')', sep='')
+			}
+		} else {
+			cmd <- paste(cmd, map.function, '(pred, quantile=', quantile, ', par.name="', par.name, '"', sep='')
+			cmd <- paste(cmd, if (package == 'googleVis') paste(', pi=', bounds, sep='') else '', sep='')
+			cmd <- paste(cmd, ')', sep='')
+		}
 		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
 		gtext(cmd, cont=script.text)
 	} else {
 		pred <- do.call('get.e0.prediction', param.pred)
-		param.map <- get.e0.map.parameters(pred, same.scale=same.scale, quantile=quantile)
+		if (par.name == 'e0' && package == 'rworldmap') {
+			param.map <- get.e0.map.parameters(pred, same.scale=same.scale, quantile=quantile)
+		} else {
+			param.map <- list(pred=pred, quantile=quantile)
+			if (par.name != 'e0')
+				param.map[['par.name']]<- par.name
+		}
+		if(package == 'rworldmap') param.map[['device']] <- 'dev.new'
+		if (package == 'googleVis') param.map[['pi']] <- bounds
 		g <- create.graphics.map.window(parent=h$action$mw, pred=pred, params=param.map, percentile=percentile, 
-										title="World Map", type='e0', main.part='e0')
+										is.gvis= package == 'googleVis', title="World Map", type='e0', main.part='e0')
 	}
 }
 
