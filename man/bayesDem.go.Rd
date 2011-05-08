@@ -1,7 +1,6 @@
 \name{bayesDem.go}
 \Rdversion{1.1}
 \alias{bayesDem.go}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Start Graphical User Interface for bayesTFR and bayesLife
 }
@@ -9,11 +8,12 @@ Start Graphical User Interface for bayesTFR and bayesLife
 The function launches Graphical User Interface for the packages \pkg{\link[bayesTFR:bayesTFR-package]{bayesTFR}} and \pkg{\link[bayesLife:bayesLife-package]{bayesLife}}.
 }
 \usage{
-bayesDem.go(wpp.year = wpp.year.default)
+bayesDem.go(wpp.year.tfr = tfr.wpp.year.default, 
+    wpp.year.e0 = e0.wpp.year.default)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{wpp.year}{WPP year for which the GUI is started. Default is 2008. Note that the GUI will work only with values for which observed data are available in the two packages. Currently it is only 2008, see \pkg{\link[bayesTFR]{UN2008}} and \pkg{\link[bayesLife]{UN2008e0}}.}
+  \item{wpp.year.tfr}{WPP year used in the bayesTFR package. Default is 2010. Note that the GUI will work only with values for which observed data are available in the bayesTFR package. Currently it is 2010 and 2008, see \pkg{\link[bayesTFR]{UN2010}}.}
+  \item{wpp.year.e0}{WPP year used in the bayesLife package. Default is 2010. Currently years 2010 and 2008 are available, see \pkg{\link[bayesLife]{UN2010e0}}.}
 }
 %\details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -31,9 +31,9 @@ bayesDem.go(wpp.year = wpp.year.default)
 \author{
 Hana Sevcikova
 }
-%\note{
-%%  ~~further notes~~
-%}
+\note{
+For more information on World Population Prospects (WPP) data, see \url{http://esa.un.org/unpd/wpp}.
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

@@ -1,3 +1,19 @@
+1.3-0 (05/06/2011)
+-----
+Default for the TFR wpp.year set to 2010.
+
+Default wpp.year splitted into one used for the TFR and one used for e0.
+
+'Gender' changed to 'Sex' in the Life Exp. tab.
+
+Option of creating maps using the googleVis package added.
+
+Droplist with PI bounds added - for maps created via googleVis.
+
+Auto-simulation feature added to the Life Expectancy tab.
+
+A few bugs fixed related to destroying a high-level window without using the 'Cancel' button. 
+
 1.2-1 (01/26/2011)
 -----
 Slider in the convergence tabs replaced by a text field, since (under R 2.12.1) it caused the
@@ -56,13 +72,17 @@ The 'Advanced Parameters' window (in 'Run MCMC' tab) re-designed.
 
 0.4.2 (02/03/2010)
 -----
-All graphs are now sent to a graphics device which can be resized by hand and from which the graphs can be saved into files. The fields for entering width and height were removed and the Advanced Parameters dialog was moved to the main tabs (in Explore Results). This change requires an additional package to be installed: cairoDevice
+All graphs are now sent to a graphics device which can be resized by hand and from which the graphs
+can be saved into files. The fields for entering width and height were removed and the Advanced Parameters
+dialog was moved to the main tabs (in Explore Results). This change requires an additional package
+to be installed: cairoDevice
 
 Required fields marked by a '*'.
 
 Color of tab-titles changed.
 
-Field for entering the simulation directory moved above all tabs, since it is common to all four steps. This way, the user can enter it only once.
+Field for entering the simulation directory moved above all tabs, since it is common to all four steps.
+This way, the user can enter it only once.
 
 'Generate Script' buttons for the Results tab added.
 
@@ -94,11 +114,13 @@ In the Results tab, the 'Prediction end year' field moved up.
 
 Parameter alpha0 changed to alpha0.p; its values changed too.
 	
-A Warning window appears if the user tries to run mcmc on a directory that contains data and the 'Overwrite existing results' button is unchecked.
+A Warning window appears if the user tries to run mcmc on a directory that contains data and
+the 'Overwrite existing results' button is unchecked.
 	
 Added an input field for a user-specified TFR file (in Run MCMC tab).
 	
-Window for setting advanced MCMC parameters improved - Buttons 'Cancel' and 'Set Default Values' added.
+Window for setting advanced MCMC parameters improved - Buttons 'Cancel' and
+'Set Default Values' added.
 
 0.2-3 (11/10/2009)
 -----
@@ -122,7 +144,8 @@ Widgets for setting RNG seed added to 'Run MCMC' and 'Make Prediction' tabs.
 
 0.1-2
 -----
-The tabs 'run MCMC', 'Continue MCMC' and 'Make predictions' got a button 'Generate Script' that generates a script for a command line use. 
+The tabs 'run MCMC', 'Continue MCMC' and 'Make predictions' got a button 'Generate Script' 
+that generates a script for a command line use. 
 	
 Added initialization message - The main window appears now after it is completely built.
 	

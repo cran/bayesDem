@@ -1,6 +1,6 @@
 
 
-tfrPredTab <- function(tfr.pred, main.win, wpp.year=wpp.year.default) {
+tfrPredTab <- function(tfr.pred, main.win, wpp.year) {
 	eTFRp <- new.env()
 
 	eTFRp$wpp.year <- wpp.year

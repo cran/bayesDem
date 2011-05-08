@@ -44,7 +44,7 @@ TFRcontinueMCMCgroup <- function(g, main.win, parent=NULL) {
 	enabled(e$iter) <- !enable 
 }
 
-.get.defaults.for.auto.cont <- function(e) {
+.get.defaults.for.auto.cont.tfr <- function(e) {
 	mcmc.set <- get.tfr.mcmc(sim.dir=svalue(e$output.dir))
 	if(is.null(mcmc.set)) {
 		gmessage('Simulation directory contains no valid TFR MCMCs.', title='Input Error',

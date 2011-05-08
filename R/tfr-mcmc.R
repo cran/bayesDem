@@ -164,11 +164,12 @@ get.simulation.status <- function(h, ...) {
 
 configure.auto.run <- function(h, ...) {
 	cont.run <- h$action$cont.run
+	type <- if(is.null(h$action$type)) 'tfr' else h$action$type
 	if (!cont.run)
-		defaults <- eval(formals(run.tfr.mcmc)$auto.conf)
+		defaults <- eval(formals(paste("run.", type, ".mcmc", sep=''))$auto.conf)
 	else {
-		defaults <- .get.defaults.for.auto.cont(h$action$env)
-		if(is.null(defaults)) defaults <- eval(formals(run.tfr.mcmc)$auto.conf)
+		defaults <- do.call(paste('.get.defaults.for.auto.cont.', type, sep=''), list(h$action$env))
+		if(is.null(defaults)) defaults <- eval(formals(paste("run.", type, ".mcmc", sep=''))$auto.conf)
 	}
 	set.defaults <- function(h2, ...) {
 		for (par in names(defaults)) {
@@ -183,18 +184,19 @@ configure.auto.run <- function(h, ...) {
 		visible(h$action$env$auto.conf.win) <- FALSE
 	}
 	
-	if (!is.null(h$action$env$auto.conf.win)) { # window exists
+	if (!is.null(h$action$env$auto.conf.win) && !h$action$env$auto.conf.env$window.destroyed) { # window exists
 		if(!is.null(h$action$env$auto.conf)) { # OK button previously clicked 
 			for (par in names(defaults)) 
 				svalue(h$action$env$auto.conf.env[[par]]) <- h$action$env$auto.conf[[par]]
 			svalue(h$action$env$auto.conf.env$run.prediction) <- h$action$env$run.prediction
 		} else { # OK button not clicked yet, values are set to defaults
 			for (par in names(defaults)) 
-				svalue(h$action$env$auto.conf.env[[par]]) <- h$action$env$auto.conf.env$defaults[[par]]
+				svalue(h$action$env$auto.conf.env[[par]]) <- defaults[[par]]
+				#svalue(h$action$env$auto.conf.env[[par]]) <- h$action$env$auto.conf.env$defaults[[par]]
 			svalue(h$action$env$auto.conf.env[['run.prediction']]) <- FALSE
 		}
 		visible(h$action$env$auto.conf.win) <- TRUE
-	} else { # create the Advanced Parameters window
+	} else { # create the window
 		
 	h$action$env$auto.conf.win <- auto.conf.win <- 
 					gwindow('Configuration of Auto Run',
@@ -204,12 +206,17 @@ configure.auto.run <- function(h, ...) {
 						})
 	e <- new.env()
 	g <- ggroup(cont=auto.conf.win, horizontal=FALSE)
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=TRUE, cont=g)
-	glabel("Number of chains:", cont=mcmc.g)
-	e$nr.chains <- gedit(defaults$nr.chains, width=2, cont=mcmc.g)
+	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, cont=g)
+	mcmc.g1 <- ggroup(cont=mcmc.g, horizontal=TRUE)
+	glabel("Number of iterations:", cont=mcmc.g1)
+	e$iter <- gedit(defaults$iter, width=7, cont=mcmc.g1)
+	glabel("Number of chains:", cont=mcmc.g1)
+	e$nr.chains <- gedit(defaults$nr.chains, width=2, cont=mcmc.g1)
 	enabled(e$nr.chains) <- !cont.run
-	glabel("Number of iterations:", cont=mcmc.g)
-	e$iter <- gedit(defaults$iter, width=7, cont=mcmc.g)
+
+	mcmc.g2 <- ggroup(cont=mcmc.g, horizontal=TRUE)
+	glabel("Iteration increments: ", cont=mcmc.g2)
+	e$iter.incr <- gedit(defaults$iter.incr, width=7, cont=mcmc.g2)
 	
 	conv.g <- gframe("<span color='blue'>Convergence diagnostics</span>", markup=TRUE, horizontal=TRUE, cont=g)
 	glabel("Burnin:", cont=conv.g)
@@ -229,8 +236,19 @@ configure.auto.run <- function(h, ...) {
 	addSpring(button.g)
 	gbutton('  Set to Default Values  ', cont=button.g, handler=set.defaults)
 	e$auto.conf.okbutton <- gbutton('OK', cont=button.g)
+	
+		if(!is.null(h$action$env$auto.conf)) { # OK button previously clicked 
+			for (par in names(defaults)) 
+				svalue(e[[par]]) <- h$action$env$auto.conf[[par]]
+			svalue(e$run.prediction) <- h$action$env$run.prediction
+		}
+			
 	visible(auto.conf.win) <- TRUE
+	e$window.destroyed <- FALSE
 	h$action$env$auto.conf.env <- e
+	addHandlerDestroy(auto.conf.win, 
+							handler=function(h1, ...) h$action$env$auto.conf.env$window.destroyed <- TRUE)
+
 	}
 	if(!is.null(h$action$env$auto.conf.okhandler)) 
 		removehandler(h$action$env$auto.conf.env$auto.conf.okbutton, h$action$env$auto.conf.okhandler)
@@ -291,7 +309,7 @@ mcmc.advance.settings <- function(h, ...) {
 		visible(h$action$env$adv.set.win) <- FALSE
 	}
 		
-	if (!is.null(h$action$env$adv.set.win)) { #Advanced Parameters window exists
+	if (!is.null(h$action$env$adv.set.win) && !h$action$env$adv.set.env$window.destroyed) { #Advanced Parameters window exists
 		if(!is.null(h$action$env$params)) { # OK button previously clicked 
 			for (par in param.names) {
 				#print (par)
@@ -513,8 +531,20 @@ mcmc.advance.settings <- function(h, ...) {
 	addSpring(button.g)
 	e$adv.set.defaultbutton <- gbutton('  Set to Default Values  ', cont=button.g, handler=set.defaults)
 	e$adv.set.okbutton <- gbutton('OK', cont=button.g)
+	
+		if(!is.null(h$action$env$params)) { # OK button previously clicked 
+			for (par in param.names) 
+				svalue(e[[par]]) <- paste(h$action$env$params[[par]], collapse=', ')
+			
+		}
+		
 	visible(adv.set.win) <- TRUE
+	e$window.destroyed <- FALSE
 	h$action$env$adv.set.env <- e
+	
+	addHandlerDestroy(adv.set.win, 
+					handler=function(h1, ...) h$action$env$adv.set.env$window.destroyed <- TRUE)
+
 	}
 	if(!is.null(h$action$env$adv.set.okhandler)) 
 		removehandler(h$action$env$adv.set.env$adv.set.okbutton, h$action$env$adv.set.okhandler)
