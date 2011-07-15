@@ -10,8 +10,8 @@ Provides Graphical user interface for the packages \pkg{bayesTFR} and \pkg{bayes
 \details{
 \tabular{ll}{
 Package: \tab bayesDem\cr
-Version: \tab 1.3-0\cr
-Date: \tab 2011-05-06\cr
+Version: \tab 1.3-1\cr
+Date: \tab 2011-07-15\cr
 Depends: \tab R (>= 2.9.0), cairoDevice, gWidgets, gWidgetsRGtk2, bayesTFR, bayesLife\cr
 License: \tab  GPL (>= 2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr
@@ -26,9 +26,13 @@ Hana Sevcikova <hanas@u.washington.edu>
 
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 }
-%\references{
-%~~ Literature or other references for background information ~~
-%}
+\references{
+Hana Sevcikova, Leontine Alkema, Adrian E. Raftery (2011). bayesTFR: An
+  R Package for Probabilistic Projections of the Total Fertility Rate.
+  Journal of Statistical Software, 43(1), 1-29.
+  \url{http://www.jstatsoft.org/v43/i01/}.
+}
+
 %~~ Optionally other standard keywords, one per line, from file KEYWORDS in the R documentation ~~
 %~~ directory ~~
 \keyword{ package }
