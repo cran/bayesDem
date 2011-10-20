@@ -10,8 +10,8 @@ Provides Graphical user interface for the packages \pkg{bayesTFR} and \pkg{bayes
 \details{
 \tabular{ll}{
 Package: \tab bayesDem\cr
-Version: \tab 1.3-1\cr
-Date: \tab 2011-07-15\cr
+Version: \tab 1.3-2\cr
+Date: \tab 2011-10-20\cr
 Depends: \tab R (>= 2.9.0), cairoDevice, gWidgets, gWidgetsRGtk2, bayesTFR, bayesLife\cr
 License: \tab  GPL (>= 2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr
