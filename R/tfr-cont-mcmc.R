@@ -3,38 +3,38 @@ TFRcontinueMCMCgroup <- function(g, main.win, parent=NULL) {
 	defaults <- formals(continue.tfr.mcmc) # default argument values
 
 	e$output.dir <- parent$sim.dir
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, cont=g)
-	auto.g <- ggroup(horizontal=TRUE, cont=mcmc.g)
+	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, container=g)
+	auto.g <- ggroup(horizontal=TRUE, container=mcmc.g)
 	e$run.prediction <- FALSE
 	e$run.auto <- gcheckbox("Auto simulation", checked=FALSE, 
-							cont=auto.g, handler=function(h,...){.enable.auto.cont(svalue(h$obj), e)})
-	e$auto.conf.b <- gbutton(' Configure auto run ', cont=auto.g, handler=configure.auto.run, 
+							container=auto.g, handler=function(h,...){.enable.auto.cont(svalue(h$obj), e)})
+	e$auto.conf.b <- gbutton(' Configure auto run ', container=auto.g, handler=configure.auto.run, 
 				action=list(mw=main.win, env=e, cont.run=TRUE))
-	iter.g <- ggroup(horizontal=TRUE, cont=mcmc.g)
-	glabel("Number of iterations:", cont=iter.g)
-	glabel("<span color='red'>*</span>", markup=TRUE, cont=iter.g)
-	e$iter <- gedit(defaults$iter, width=7, cont=iter.g)
-	glabel("Chain ids:", cont=iter.g)
-	e$chain.ids <- gedit(defaults$chain.ids, width=10, cont=iter.g)
+	iter.g <- ggroup(horizontal=TRUE, container=mcmc.g)
+	glabel("Number of iterations:", container=iter.g)
+	glabel("<span color='red'>*</span>", markup=TRUE, container=iter.g)
+	e$iter <- gedit(defaults$iter, width=7, container=iter.g)
+	glabel("Chain ids:", container=iter.g)
+	e$chain.ids <- gedit(defaults$chain.ids, width=10, container=iter.g)
 	.enable.auto.cont(FALSE, e)
 	
 	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE,
-					 horizontal=TRUE, cont=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, cont=paral.g)
+					 horizontal=TRUE, container=g)
+	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=paral.g)
 	addSpace(paral.g, 5)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, cont=paral.g)
-	glabel("  Number of nodes:", cont=paral.g)
-	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, cont=paral.g)
+	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=paral.g)
+	glabel("  Number of nodes:", container=paral.g)
+	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=paral.g)
 	
 	addSpring(g)
-	cont.g <- ggroup(horizontal=TRUE, cont=g)
+	cont.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='continue.tfr.mcmc', package='bayesTFR', parent.group=cont.g,
 						parent.window=main.win)
 	addSpring(cont.g)
-	gbutton(' Generate Script ', cont=cont.g, handler=mcmc.continue,
+	gbutton(' Generate Script ', container=cont.g, handler=mcmc.continue,
 				action=list(mw=main.win, env=e, script=TRUE))
 	gbutton(action=gaction(label=' Continue MCMC ', icon='execute', handler=mcmc.continue, 
-				action=list(mw=main.win, env=e, script=FALSE)), cont=cont.g)
+				action=list(mw=main.win, env=e, script=FALSE)), container=cont.g)
 	return(e)
 }
 
@@ -75,7 +75,7 @@ mcmc.continue <- function(h, ...) {
 											 ')',sep=' ')
 		if(run.auto && e$run.prediction) 
 			commands <- paste(commands, '\n\ntfr.predict(m, use.diagnostics=TRUE, replace.output=TRUE)', sep='')
-		gtext(commands, cont=script.text)
+		gtext(commands, container=script.text)
 	} else {
 		m <- do.call('continue.tfr.mcmc', params)
 		if(run.auto && e$run.prediction)

@@ -1,13 +1,13 @@
 TFRnewPred.group <- function(g, main.win, parent) {
-	nb <- gnotebook(cont=g, expand=TRUE)
+	nb <- gnotebook(container=g, expand=TRUE)
 	all.c.g <- ggroup(label="<span color='#0B6138'>All Countries</span>", 
-							markup=TRUE, horizontal=FALSE, expand=TRUE, cont=nb)
+							markup=TRUE, horizontal=FALSE, expand=TRUE, container=nb)
 	pred.all <- tfr.pred.all.countries.group(all.c.g, main.win, parent)
 	extra.c.g <- ggroup(label="<span color='#0B6138'>Extra Areas &amp; Regions</span>", 
-							markup=TRUE, horizontal=FALSE, expand=TRUE, cont=nb)
+							markup=TRUE, horizontal=FALSE, expand=TRUE, container=nb)
 	pred.extra <- tfr.pred.extra.countries.group(extra.c.g, main.win, parent)
 	edit.g <- ggroup(label="<span color='#0B6138'>Edit Predictions</span>", 
-							markup=TRUE, horizontal=FALSE, expand=TRUE, cont=nb)
+							markup=TRUE, horizontal=FALSE, expand=TRUE, container=nb)
 	pred.edit <- edit.predictions.group(edit.g, main.win, parent)
 	svalue(nb) <- 1
 	return(pred.all)
@@ -23,57 +23,57 @@ tfr.pred.all.countries.group <- function(g, main.win, parent) {
 	defaults <- formals(tfr.predict) # default argument values
 	e$sim.dir <- parent$sim.dir
 	
-	pred.g <- gframe("<span color='blue'>Prediction</span>", markup=TRUE, horizontal=FALSE, cont=g)
-	pred.g1 <- ggroup(horizontal=TRUE, cont=pred.g)
-	glabel("End year:", cont=pred.g1)
-	glabel("<span color='red'>*</span>", markup=TRUE, cont=pred.g1)
-	e$end.year <- gedit(defaults$end.year, width=4, cont=pred.g1)
+	pred.g <- gframe("<span color='blue'>Prediction</span>", markup=TRUE, horizontal=FALSE, container=g)
+	pred.g1 <- ggroup(horizontal=TRUE, container=pred.g)
+	glabel("End year:", container=pred.g1)
+	glabel("<span color='red'>*</span>", markup=TRUE, container=pred.g1)
+	e$end.year <- gedit(defaults$end.year, width=4, container=pred.g1)
 	e$use.diagnostics <- gcheckbox("Use diagnostics", checked = defaults$use.diagnostics, 
 									handler=function(h, ...) enable.pred.settings(!svalue(h$obj)), 
-									cont=pred.g1)
+									container=pred.g1)
 	addSpace(pred.g1, 20)
-	glabel("RNG seed:", cont=pred.g1)
-	e$seed <- gedit(defaults$seed, width=4, cont=pred.g1)
+	glabel("RNG seed:", container=pred.g1)
+	e$seed <- gedit(defaults$seed, width=4, container=pred.g1)
 	addSpace(pred.g1, 10)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, cont=pred.g1)
+	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=pred.g1)
 
-	pred.g2 <- ggroup(horizontal=TRUE, cont=pred.g)
-	glabel("Burnin:", cont=pred.g2)
-	glabel("<span color='red'>*</span>", markup=TRUE, cont=pred.g2)
-	e$burnin <- gedit(defaults$burnin, width=7, cont=pred.g2)
-	glabel("Nr. of trajectories:", cont=pred.g2)
-	e$nr.traj <- gedit(defaults$nr.traj, width=5, cont=pred.g2)
-	glabel("OR  Thin:", cont=pred.g2)
-	e$thin <- gedit(defaults$thin, width=5, cont=pred.g2)
+	pred.g2 <- ggroup(horizontal=TRUE, container=pred.g)
+	glabel("Burnin:", container=pred.g2)
+	glabel("<span color='red'>*</span>", markup=TRUE, container=pred.g2)
+	e$burnin <- gedit(defaults$burnin, width=7, container=pred.g2)
+	glabel("Nr. of trajectories:", container=pred.g2)
+	e$nr.traj <- gedit(defaults$nr.traj, width=5, container=pred.g2)
+	glabel("OR  Thin:", container=pred.g2)
+	e$thin <- gedit(defaults$thin, width=5, container=pred.g2)
 	enable.pred.settings(!defaults$use.diagnostics)
 	
-	sim.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, cont=g)
-	out.g1 <- ggroup(horizontal=TRUE, cont=sim.g)
+	sim.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, container=g)
+	out.g1 <- ggroup(horizontal=TRUE, container=sim.g)
 	e$replace.output <- gcheckbox("Overwrite existing prediction in simulation directory", 
-									checked=defaults$replace.output, cont=out.g1)
-	sim.g2 <- ggroup(horizontal=TRUE, cont=sim.g)
+									checked=defaults$replace.output, container=out.g1)
+	sim.g2 <- ggroup(horizontal=TRUE, container=sim.g)
 
-	glabel("Nr. of ascii trajectories:", cont=sim.g2)
-	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, cont=sim.g2)
+	glabel("Nr. of ascii trajectories:", container=sim.g2)
+	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=sim.g2)
 	
-	ar.g <- gframe("<span color='blue'>AR(1) Process</span>", markup=TRUE, horizontal=TRUE, cont=g)
-	glabel("mu:", cont=ar.g)
-	e$mu <- gedit(defaults$mu, width=5, cont=ar.g)
-	glabel("rho:", cont=ar.g)
-	e$rho <- gedit(defaults$rho, width=6, cont=ar.g)
-	glabel("sigma:", cont=ar.g)
-	e$sigmaAR1 <- gedit(defaults$sigmaAR1, width=15, cont=ar.g)
+	ar.g <- gframe("<span color='blue'>AR(1) Process</span>", markup=TRUE, horizontal=TRUE, container=g)
+	glabel("mu:", container=ar.g)
+	e$mu <- gedit(defaults$mu, width=5, container=ar.g)
+	glabel("rho:", container=ar.g)
+	e$rho <- gedit(defaults$rho, width=6, container=ar.g)
+	glabel("sigma:", container=ar.g)
+	e$sigmaAR1 <- gedit(defaults$sigmaAR1, width=15, container=ar.g)
 	
 	addSpring(g)
-	predict.g <- ggroup(horizontal=TRUE, cont=g)
+	predict.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='tfr.predict', package='bayesTFR', 
 				parent.group=predict.g,
 						parent.window=main.win)
 	addSpring(predict.g)
-	gbutton(' Generate Script ', cont=predict.g, handler=run.tfr.prediction,
+	gbutton(' Generate Script ', container=predict.g, handler=run.tfr.prediction,
 				action=list(mw=main.win, env=e, script=TRUE))
 	gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.tfr.prediction, 
-				action=list(mw=main.win, env=e, script=FALSE)), cont=predict.g)
+				action=list(mw=main.win, env=e, script=FALSE)), container=predict.g)
 	return(e)
 
 }
@@ -101,7 +101,7 @@ run.tfr.prediction <- function(h, ...)
 		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		gtext(paste('tfr.predict(', paste(paste(names(params), params, sep='='), collapse=', '),
 											 ')',sep=' '), 
-					cont=script.text)
+					container=script.text)
 	} else {
 		if(!params[['replace.output']] & has.tfr.prediction(sim.dir=params[['sim.dir']])) {
 				gmessage(paste('Prediction for', params[['sim.dir']], 
@@ -126,36 +126,36 @@ tfr.pred.extra.countries.group <- function(g, main.win, parent) {
 	defaults <- formals(tfr.predict.extra) # default argument values
 		
 	e$countries.g <- gframe("<span color='blue'>Countries/Regions selection</span>", markup=TRUE, 
-							horizontal=FALSE, cont=g)
-	e$countries.g1 <- ggroup(horizontal=TRUE, cont=e$countries.g)
-	e$all.countries <- gcheckbox("All without prediction", checked=TRUE, cont=e$countries.g1,
+							horizontal=FALSE, container=g)
+	e$countries.g1 <- ggroup(horizontal=TRUE, container=e$countries.g)
+	e$all.countries <- gcheckbox("All without prediction", checked=TRUE, container=e$countries.g1,
 									handler=function(h,...){
 										enabled(e$e.countries.gb) <- !svalue(h$obj)
 										})
 	addSpace(e$countries.g1, 20)
-	e$e.countries.gb <- gbutton("  Select specific countries/regions  ", cont=e$countries.g1,
+	e$e.countries.gb <- gbutton("  Select specific countries/regions  ", container=e$countries.g1,
 				handler=selectCountryMenuPred,
 				action=list(mw=main.win, env=e, not.predicted=TRUE, multiple=TRUE, sorted=FALSE))
 	enabled(e$e.countries.gb) <- !svalue(e$all.countries)
 	
-	e$sim.g <- gframe("<span color='blue'>Output</span>", markup=TRUE, horizontal=FALSE, cont=g)
+	e$sim.g <- gframe("<span color='blue'>Output</span>", markup=TRUE, horizontal=FALSE, container=g)
 	e$sim.dir <- parent$sim.dir
-	e$sim.g2 <- ggroup(horizontal=TRUE, cont=e$sim.g)
-	glabel("# ascii trajectories:", cont=e$sim.g2)
-	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, cont=e$sim.g2)
+	e$sim.g2 <- ggroup(horizontal=TRUE, container=e$sim.g)
+	glabel("# ascii trajectories:", container=e$sim.g2)
+	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=e$sim.g2)
 	addSpace(e$sim.g2, 30)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, cont=e$sim.g2)
+	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=e$sim.g2)
 
 	addSpring(g)
-	predict.g <- ggroup(horizontal=TRUE, cont=g)
+	predict.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='tfr.predict.extra', package='bayesTFR', 
 				parent.group=predict.g,
 						parent.window=main.win)
 	addSpring(predict.g)
-	gbutton(' Generate Script ', cont=predict.g, handler=run.tfr.prediction.extra,
+	gbutton(' Generate Script ', container=predict.g, handler=run.tfr.prediction.extra,
 				action=list(mw=main.win, env=e, script=TRUE))
 	gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.tfr.prediction.extra, 
-				action=list(mw=main.win, env=e, script=FALSE)), cont=predict.g)
+				action=list(mw=main.win, env=e, script=FALSE)), container=predict.g)
 
 	return(e)
 		  
@@ -176,7 +176,7 @@ run.tfr.prediction.extra <- function(h, ...)
 		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		gtext(paste('tfr.predict.extra(', paste(paste(names(params), params, sep='='), collapse=', '),
 											 ')',sep=' '), 
-					cont=script.text)
+					container=script.text)
 	} else {
 		do.call('tfr.predict.extra', params)
 	}
@@ -186,32 +186,32 @@ edit.predictions.group <- function(g, main.win, parent, type='tfr') {
 	e <- new.env()
 	e$sim.dir <- parent$sim.dir
 	e$edit.frame <- gframe("<span color='blue'>Edit Median</span>", markup=TRUE, 
-						horizontal=FALSE, cont=g, expand=TRUE)
-	gbutton("  Select specific country/region  ", cont=e$edit.frame,
+						horizontal=FALSE, container=g, expand=TRUE)
+	gbutton("  Select specific country/region  ", container=e$edit.frame,
 				handler=selectCountryMenuPred,
 				action=list(mw=main.win, env=e, not.predicted=FALSE, multiple=FALSE,
 							edit.median=TRUE, sorted=TRUE, type=type))
 
 	#addSpring(g)
-	button.g <- ggroup(horizontal=TRUE, cont=g)
+	button.g <- ggroup(horizontal=TRUE, container=g)
 	addSpring(button.g)
 	e$restoreb <- gbutton(action=gaction(label='Restore BHM medians', 
-				handler=restore.bhm.medians, action=list(mw=main.win, env=e, type=type)), cont=button.g)
+				handler=restore.bhm.medians, action=list(mw=main.win, env=e, type=type)), container=button.g)
 	enabled(e$restoreb) <- FALSE
 	e$applyb <- gbutton(action=gaction(label='Save', handler=edit.prediction, 
-				action=list(mw=main.win, env=e, type=type)), cont=button.g)
+				action=list(mw=main.win, env=e, type=type)), container=button.g)
 	enabled(e$applyb) <- FALSE
 	
 	addSpring(g)
 	convert.frame <- gframe("<span color='blue'>Convert trajectories to ASCII</span>", markup=TRUE, 
-						horizontal=TRUE, cont=g)
-	glabel("Nr. of ascii trajectories:", cont=convert.frame)
-	e$save.as.ascii <- gedit(formals(paste(type,'.predict', sep=''))$save.as.ascii, width=5, cont=convert.frame)
-	e$write.summary <- gcheckbox("Write summary files", checked=TRUE, cont=convert.frame)
-	e$verbose <- gcheckbox("Verbose", checked=FALSE, cont=convert.frame)
+						horizontal=TRUE, container=g)
+	glabel("Nr. of ascii trajectories:", container=convert.frame)
+	e$save.as.ascii <- gedit(formals(paste(type,'.predict', sep=''))$save.as.ascii, width=5, container=convert.frame)
+	e$write.summary <- gcheckbox("Write summary files", checked=TRUE, container=convert.frame)
+	e$verbose <- gcheckbox("Verbose", checked=FALSE, container=convert.frame)
 	addSpring(convert.frame)
 	button.conv <- gbutton(action=gaction(label='Convert', handler=.convert.trajectories, 
-				action=list(mw=main.win, env=e, type=type)), cont=convert.frame)
+				action=list(mw=main.win, env=e, type=type)), container=convert.frame)
 }
 
 edit.prediction <- function(h, ...) {
@@ -286,7 +286,7 @@ show.median.editor <- function(e, type='tfr'){
 	if(!is.null(e$country.label)) svalue(e$country.label) <- country.obj$name
 	else {
 		addSpring(e$edit.frame)	
-		e$country.label <- glabel(country.obj$name, cont=e$edit.frame)
+		e$country.label <- glabel(country.obj$name, container=e$edit.frame)
 	}
 	e$sim.dir.value <- sim.dir
 	e$edit.country.obj <- country.obj
@@ -299,7 +299,7 @@ show.median.editor <- function(e, type='tfr'){
 				}
 		df.view <- makeDFView(data, e$edit.frame, f, e)
 		e$median.df <- df.view$model
-		#e$median.df <- gdf(data, cont=e$edit.frame)
+		#e$median.df <- gdf(data, container=e$edit.frame)
 		#addhandlerchanged(e$median.df, handler=function(h, ...) {
 		#		enabled(e$applyb) <- TRUE; enabled(e$restoreb) <- TRUE
 		#		})
@@ -347,14 +347,14 @@ selectCountryMenuPred <- function(h, ...) {
 								h$action$env$sel.extra.country.ok.handler <- NULL
 							},
 							action=list(env=h$action$env))
-		t.group <- ggroup(horizontal=FALSE, cont=win)
-		h$action$env$sel.extra.country.gt <- gtable(h$action$env$extra.country.table, cont=t.group, 
+		t.group <- ggroup(horizontal=FALSE, container=win)
+		h$action$env$sel.extra.country.gt <- gtable(h$action$env$extra.country.table, container=t.group, 
 					expand=TRUE, multiple=h$action$multiple, handler=country.selected)
-		b.group <- ggroup(horizontal=TRUE, cont=t.group)
-		gbutton('Cancel', cont=b.group, handler=function(h, ...) 
+		b.group <- ggroup(horizontal=TRUE, container=t.group)
+		gbutton('Cancel', container=b.group, handler=function(h, ...) 
 					visible(win) <- FALSE)
 		addSpring(b.group)
-		h$action$env$sel.extra.country.okbutton <- gbutton('OK', cont=b.group)
+		h$action$env$sel.extra.country.okbutton <- gbutton('OK', container=b.group)
 	}
 	if(!is.null(h$action$env$sel.extra.country.ok.handler)) 
 		removehandler(h$action$env$sel.extra.country.okbutton, h$action$env$sel.extra.country.ok.handler)

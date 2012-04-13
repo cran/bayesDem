@@ -1,12 +1,12 @@
 e0RunMCMCgroup <- function(g, main.win, parent) {
 	# parent needed for wpp set in the parent function
 	e <- new.env()
-	nb <- gnotebook(cont=g, expand=TRUE)
+	nb <- gnotebook(container=g, expand=TRUE)
 	all.c.g <- ggroup(label="<span color='#0B6138'>All Countries</span>", markup=TRUE, 
-						horizontal=FALSE, cont=nb)
+						horizontal=FALSE, container=nb)
 	all.c.env <- e0mcmc.all.countries.group(all.c.g, main.win, parent)
 	extra.c.g <- ggroup(label="<span color='#0B6138'>Extra Areas &amp; Regions</span>", 
-						markup=TRUE, horizontal=FALSE, cont=nb)
+						markup=TRUE, horizontal=FALSE, container=nb)
 	extra.c.env <- e0mcmc.extra.countries.group(extra.c.g, main.win, parent)
 	svalue(nb) <- 1
 }
@@ -15,71 +15,71 @@ e0mcmc.all.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
 	defaults <- formals(run.e0.mcmc) # default argument values
 
-	out.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, cont=g)
+	out.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, container=g)
 	e$output.dir <- parent$sim.dir				
 	
-	out.g2 <- ggroup(horizontal=TRUE, cont=out.g)
+	out.g2 <- ggroup(horizontal=TRUE, container=out.g)
 	e$replace.output <- gcheckbox("Overwrite existing results in simulation directory", 
-									checked=defaults$replace.output, cont=out.g2)
+									checked=defaults$replace.output, container=out.g2)
 	addSpace(out.g2, 20)
-	glabel("Buffer size:", cont=out.g2)
-	e$buffer.size <- gedit(defaults$buffer.size, width=4, cont=out.g2)
+	glabel("Buffer size:", container=out.g2)
+	e$buffer.size <- gedit(defaults$buffer.size, width=4, container=out.g2)
 
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, cont=g)
-	auto.g <- ggroup(horizontal=TRUE, cont=mcmc.g)
+	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, container=g)
+	auto.g <- ggroup(horizontal=TRUE, container=mcmc.g)
 	e$run.prediction <- FALSE
-	e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', cont=auto.g,
+	e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', container=auto.g,
 							handler=function(h,...){.enable.auto.run(svalue(h$obj), e)})
-	e$auto.conf.b <- gbutton(' Configure auto run ', cont=auto.g, handler=configure.auto.run, 
+	e$auto.conf.b <- gbutton(' Configure auto run ', container=auto.g, handler=configure.auto.run, 
 				action=list(mw=main.win, env=e, cont.run=FALSE, type='e0'))
-	iter.g1 <- ggroup(horizontal=TRUE, cont=mcmc.g)
-	glabel("Number of chains:", cont=iter.g1)
-	e$nr.chains <- gedit(defaults$nr.chains, width=2, cont=iter.g1)
-	glabel("Number of iterations:", cont=iter.g1)
-	e$iter <- gedit(defaults$iter, width=7, cont=iter.g1)
-	glabel("Thin:", cont=iter.g1)
-	e$thin <- gedit(defaults$thin, width=2, cont=iter.g1)
+	iter.g1 <- ggroup(horizontal=TRUE, container=mcmc.g)
+	glabel("Number of chains:", container=iter.g1)
+	e$nr.chains <- gedit(defaults$nr.chains, width=2, container=iter.g1)
+	glabel("Number of iterations:", container=iter.g1)
+	e$iter <- gedit(defaults$iter, width=7, container=iter.g1)
+	glabel("Thin:", container=iter.g1)
+	e$thin <- gedit(defaults$thin, width=2, container=iter.g1)
 	.enable.auto.run(defaults$iter=='auto', e)
-	glabel("RNG seed:", cont=iter.g1)
-	e$seed <- gedit(defaults$seed, width=4, cont=iter.g1)
+	glabel("RNG seed:", container=iter.g1)
+	e$seed <- gedit(defaults$seed, width=4, container=iter.g1)
 		
-	time.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, cont=g)
-	time.g1 <- ggroup(horizontal=TRUE, cont=time.g)
-	glabel("Sex:", cont=time.g1)
-	e$sex <- gdroplist(c('Female', 'Male'), cont=time.g1, selected=2)
+	time.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, container=g)
+	time.g1 <- ggroup(horizontal=TRUE, container=time.g)
+	glabel("Sex:", container=time.g1)
+	e$sex <- gdroplist(c('Female', 'Male'), container=time.g1, selected=1)
 	addSpace(time.g1, 10)
-	glabel("Start year:", cont=time.g1)
-	e$start.year <- gedit(defaults$start.year, width=4, cont=time.g1)
-	glabel("     Present year:", cont=time.g1)
-	e$present.year <- gedit(defaults$present.year, width=4, cont=time.g1)
-	glabel("     WPP year:", cont=time.g1)
-	glabel(parent$wpp.year, cont=time.g1)
+	glabel("Start year:", container=time.g1)
+	e$start.year <- gedit(defaults$start.year, width=4, container=time.g1)
+	glabel("     Present year:", container=time.g1)
+	e$present.year <- gedit(defaults$present.year, width=4, container=time.g1)
+	glabel("     WPP year:", container=time.g1)
+	glabel(parent$wpp.year, container=time.g1)
 	
-	time.g2 <- ggroup(horizontal=TRUE, cont=time.g)
-	glabel("User-defined e0 file:", cont=time.g2)
-	e$my.e0.file <- gfilebrowse(eval(defaults$my.tfr.file), type='open', 
-					  width=40, quote=FALSE, cont=time.g2)
+	time.g2 <- ggroup(horizontal=TRUE, container=time.g)
+	glabel("User-defined e0 file:", container=time.g2)
+	e$my.e0.file <- gfilebrowse(eval(defaults$my.e0.file), type='open', 
+					  width=40, quote=FALSE, container=time.g2)
 	
-	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, cont=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, cont=paral.g)
+	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g)
+	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=paral.g)
 	addSpace(paral.g, 10)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, cont=paral.g)
-	glabel("  Number of nodes:", cont=paral.g)
-	e$nr.nodes <- gedit(svalue(e$nr.chains), width=2, cont=paral.g)
+	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=paral.g)
+	glabel("  Number of nodes:", container=paral.g)
+	e$nr.nodes <- gedit(svalue(e$nr.chains), width=2, container=paral.g)
 
 	addSpring(g)
-	adv.g <- ggroup(horizontal=TRUE, cont=g)
-	create.help.button(topic='run.e0.mcmc', package='bayesLife', parent.group=adv.g,
+	adv.g <- ggroup(horizontal=TRUE, container=g)
+	create.help.button(topic=c('run.e0.mcmc', 'bayesLife-package'), package='bayesLife', parent.group=adv.g,
 						parent.window=main.win)
-	gbutton('  Advanced Settings  ', cont=adv.g, handler=e0mcmc.advance.settings, 
+	gbutton('  Advanced Settings  ', container=adv.g, handler=e0mcmc.advance.settings, 
 				action=list(mw=main.win, env=e))
 				
 	addSpring(adv.g)
-	gbutton(' Generate Script ', cont=adv.g, handler=e0mcmc.run,
+	gbutton(' Generate Script ', container=adv.g, handler=e0mcmc.run,
 						action=list(mw=main.win, env=e, script=TRUE, wpp.year=parent$wpp.year))
 	gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=e0mcmc.run, 
 				action=list(mw=main.win, env=e, script=FALSE, wpp.year=parent$wpp.year, parent.group=g)), 
-				cont=adv.g)
+				container=adv.g)
 	#e$statusbar <- gstatusbar() # don't display now
 	return(e)
 	}
@@ -89,41 +89,41 @@ e0mcmc.extra.countries.group <- function(g, main.win, parent) {
 	defaults <- formals(run.e0.mcmc.extra) # default argument values
 	e$sim.dir <- parent$sim.dir
 	
-	e$ts.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, cont=g)
-	e$ts.g1 <- ggroup(horizontal=TRUE, cont=e$ts.g)
-	gbutton("  Select countries/regions from the UN e0-file  ", cont=e$ts.g1,
+	e$ts.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, container=g)
+	e$ts.g1 <- ggroup(horizontal=TRUE, container=e$ts.g)
+	gbutton("  Select countries/regions from the UN e0-file  ", container=e$ts.g1,
 				handler=multiSelectCountryMenu,
 				action=list(mw=main.win, env=e, type='e0'))
 	
-	e$ts.g2 <- ggroup(horizontal=TRUE, cont=e$ts.g)
-	glabel("User-defined e0-file:", cont=e$ts.g2)
+	e$ts.g2 <- ggroup(horizontal=TRUE, container=e$ts.g)
+	glabel("User-defined e0-file:", container=e$ts.g2)
 	e$my.e0.file <- gfilebrowse(eval(defaults$my.e0.file), type='open', 
-					  width=40, quote=FALSE, cont=e$ts.g2)
+					  width=40, quote=FALSE, container=e$ts.g2)
 					  
-	e$iter.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=TRUE, cont=g)
-	glabel("Number of iterations:", cont=e$iter.g)
-	e$iter <- gedit(defaults$iter, width=7, cont=e$iter.g)
-	glabel("Thin:", cont=e$iter.g)
-	e$thin <- gedit(defaults$thin, width=2, cont=e$iter.g)
-	glabel("Burnin:", cont=e$iter.g)
-	e$burnin <- gedit(defaults$burnin, width=4, cont=e$iter.g)
+	e$iter.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=TRUE, container=g)
+	glabel("Number of iterations:", container=e$iter.g)
+	e$iter <- gedit(defaults$iter, width=7, container=e$iter.g)
+	glabel("Thin:", container=e$iter.g)
+	e$thin <- gedit(defaults$thin, width=2, container=e$iter.g)
+	glabel("Burnin:", container=e$iter.g)
+	e$burnin <- gedit(defaults$burnin, width=4, container=e$iter.g)
 					  					  
-	e$paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, cont=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, cont=e$paral.g)
+	e$paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g)
+	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=e$paral.g)
 	addSpace(e$paral.g, 10)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, cont=e$paral.g)
-	glabel("  Number of nodes:", cont=e$paral.g)
-	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, cont=e$paral.g)
+	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=e$paral.g)
+	glabel("  Number of nodes:", container=e$paral.g)
+	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=e$paral.g)
 	
 	addSpring(g)
-	e$button.g <- ggroup(horizontal=TRUE, cont=g)
+	e$button.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='run.e0.mcmc.extra', package='bayesLife', parent.group=e$button.g,
 						parent.window=main.win)	
 	addSpring(e$button.g)
-	gbutton(' Generate Script ', cont=e$button.g, handler=e0mcmc.run.extra,
+	gbutton(' Generate Script ', container=e$button.g, handler=e0mcmc.run.extra,
 						action=list(mw=main.win, env=e, script=TRUE))
 	gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=e0mcmc.run.extra, 
-				action=list(mw=main.win, env=e, script=FALSE)), cont=e$button.g)
+				action=list(mw=main.win, env=e, script=FALSE)), container=e$button.g)
 
 	return(e)
 }
@@ -141,16 +141,21 @@ e0mcmc.run <- function(h, ...) {
 	run.auto <- svalue(e$run.auto)
 	if (run.auto) {
 		params[['auto.conf']] <- e$auto.conf
+		op <- options("useFancyQuotes")
+		options(useFancyQuotes = FALSE)
 		params[['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
+		options(op)
 	}
 	if (h$action$script) {
 		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
 		commands <- paste('m <- run.e0.mcmc(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
 					paste(paste(names(e$params), e$params, sep='='), collapse=', '),
 											 ')',sep=' ')
-		#if(run.auto && e$run.prediction) 
-		#	commands <- paste(commands, '\n\ne0.predict(m, use.diagnostics=TRUE)', sep='')
-		gtext(commands, cont=script.text)
+		if(run.auto && e$run.prediction) {
+			commands <- paste(commands, '\n\ne0.predict(m, use.diagnostics=TRUE)', sep='')
+			#commands <- paste(commands, '\n\ne0.predict(m)', sep='')
+			}
+		gtext(commands, container=script.text)
 	} else {
 		if(!params[['replace.output']] & file.exists(params[['output.dir']])) {
 			if(length(list.files(params[['output.dir']])) > 0) {
@@ -169,8 +174,10 @@ e0mcmc.run <- function(h, ...) {
 		} else run <- TRUE
 		if(run) {
 			m <- do.call('run.e0.mcmc', c(params, e$params))
-			#if(run.auto && e$run.prediction)
-			#	e0.predict(m, use.diagnostics=TRUE)
+			if(run.auto && e$run.prediction) {
+				e0.predict(m, use.diagnostics=TRUE)
+				#e0.predict(m)
+			}
 		}
 	}
 }
@@ -187,7 +194,7 @@ e0mcmc.run.extra <- function(h, ...) {
 		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
 		gtext(paste('run.e0.mcmc.extra(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
 											 ')',sep=' '), 
-					cont=script.text)
+					container=script.text)
 	} else {
 		do.call('run.e0.mcmc.extra', params)
 	}
@@ -198,9 +205,13 @@ e0mcmc.advance.settings <- function(h, ...) {
 					'lambda.ini', 'lambda.k.ini', 'lambda.z.ini', 'omega.ini',
 					'Triangle.ini.low', 'Triangle.ini.up', 
 					'k.ini.low', 'z.ini.low', 'k.ini.up', 'z.ini.up',
+					'Triangle.prior.low', 'Triangle.prior.up',
+					'k.prior.low', 'z.prior.low', 'k.prior.up', 'z.prior.up',
 					'lambda.ini.low', 'lambda.k.ini.low', 'lambda.z.ini.low', 
 					'lambda.ini.up', 'lambda.k.ini.up', 'lambda.z.ini.up',
 					'omega.ini.low', 'omega.ini.up',
+					'Triangle.c.prior.low', 'Triangle.c.prior.up',
+					'k.c.prior.low', 'z.c.prior.low', 'k.c.prior.up', 'z.c.prior.up',
 					'Triangle.c.width', 'k.c.width', 'z.c.width', 'nu', 'dl.p1', 'dl.p2'
 						)
 	get.defaults <- function() {
@@ -356,43 +367,51 @@ e0mcmc.advance.settings <- function(h, ...) {
 						})
 		e <- new.env()
 		e$defaults <- defaults <- get.defaults()
-		e$adv.g <- ggroup(cont=adv.set.win, horizontal=FALSE)
+		e$adv.g <- ggroup(container=adv.set.win, horizontal=FALSE)
 	
 	linked.pars.list <- linked.pars.tuple <- widget.defaults <- list()
 
-	priors.f <- gframe("<span color='blue'>Prior parameters and initial values</span>", markup=TRUE, cont=e$adv.g, horizontal=FALSE)
-	normal.g <- ggroup(horizontal=TRUE, cont=priors.f)
-	priors.normal.f <- gframe("<span  color='#0B6138'>Normal priors</span>", markup=TRUE, cont=normal.g,
+	priors.f <- gframe("<span color='blue'>Prior parameters and initial values</span>", markup=TRUE, container=e$adv.g, horizontal=FALSE)
+	normal.g <- ggroup(horizontal=TRUE, container=priors.f)
+	priors.normal.f <- gframe("<span  color='#0B6138'>Normal priors for world parameters</span>", markup=TRUE, container=normal.g,
 								horizontal=FALSE)
-	normal.flo <- glayout(cont=priors.normal.f)
+	normal.flo <- glayout(container=priors.normal.f)
 	
 	l <- 1 # row 1
 	normal.flo[l,1] <- ''
-	normal.flo[l,2] <- 'prior mean (a)'
-	normal.flo[l,3] <- 'prior sd (delta)'
-	normal.flo[l,4] <- 'init lower'
-	normal.flo[l,5] <- 'init upper'
-	normal.flo[l,6] <- 'init values'
-		
+	normal.flo[l,2] <- 'prior mean\n     (a)'
+	normal.flo[l,3] <- 'prior sd\n (delta)'
+	normal.flo[l,4] <- '   prior\nlower b.'
+	normal.flo[l,5] <- '   prior\nupper b.'
+	normal.flo[l,6] <- ' init\nlower'
+	normal.flo[l,7] <- ' init\nupper'
+	normal.flo[l,8] <- 'init values'
 	lower <- c(defaults$Triangle.ini.low, defaults$k.ini.low, defaults$z.ini.low)
 	upper <- c(defaults$Triangle.ini.up, defaults$k.ini.up, defaults$z.ini.up)
 	ini <- c(unlist(defaults$Triangle.ini), defaults$k.ini, defaults$z.ini)
-	e$a <- e$delta <- e$lower <- e$upper <- e$init <- NULL
+	prior.low <- c(defaults$Triangle.prior.low, defaults$k.prior.low, defaults$z.prior.low)
+	prior.up <- c(defaults$Triangle.prior.up, defaults$k.prior.up, defaults$z.prior.up)
+
+	e$a <- e$delta <- e$lower <- e$upper <- e$prior.low <- e$prior.up <-e$init <- NULL
 	labels <- paste('<span>', c(paste('Triangle<sub>', 1:4, '</sub>', sep=''), 'k', 'z'), ':</span>', sep='')
 	for (i in 1:6) {
 		row <- l + i
-		normal.flo[row,1] <- glabel(labels[i], markup=TRUE, cont=normal.flo)
-		e$a <- c(e$a, normal.flo[row,2] <- gedit(defaults$a[i], width=7, cont=normal.flo))
-		e$delta <- c(e$delta, normal.flo[row,3] <- gedit(defaults$delta[i], width=7, cont=normal.flo))
-		e$lower <- c(e$lower, normal.flo[row,4] <- gedit(lower[i], width=7, cont=normal.flo))
-		e$upper <- c(e$upper, normal.flo[row,5] <-  gedit(upper[i], width=7, cont=normal.flo))
-		e$init  <- c(e$init, normal.flo[row,6] <- gedit(ini[i], width=12, cont=normal.flo))
+		normal.flo[row,1] <- glabel(labels[i], markup=TRUE, container=normal.flo)
+		e$a <- c(e$a, normal.flo[row,2] <- gedit(round(defaults$a[i],4), width=7, container=normal.flo))
+		e$delta <- c(e$delta, normal.flo[row,3] <- gedit(round(defaults$delta[i],3), width=5, container=normal.flo))
+		e$prior.low <- c(e$prior.low, normal.flo[row,4] <- gedit(prior.low[i], width=5, container=normal.flo))
+		e$prior.up <- c(e$prior.up, normal.flo[row,5] <- gedit(prior.up[i], width=5, container=normal.flo))
+		e$lower <- c(e$lower, normal.flo[row,6] <- gedit(lower[i], width=5, container=normal.flo))
+		e$upper <- c(e$upper, normal.flo[row,7] <-  gedit(upper[i], width=5, container=normal.flo))
+		e$init  <- c(e$init, normal.flo[row,8] <- gedit(ini[i], width=10, container=normal.flo))
 		addHandlerChanged(e$init[[i]], action=list(idx=i), handler=function(h1,...) {
 						isempty <- nchar(svalue(e$init[[h1$action$idx]]))==0
 						enabled(e$lower[[h1$action$idx]]) <- isempty
 						enabled(e$upper[[h1$action$idx]]) <- isempty
 						})
 	}
+	widget.defaults[['prior.low']] <- prior.low
+	widget.defaults[['prior.up']] <- prior.up
 	widget.defaults[['lower']] <- lower
 	widget.defaults[['upper']] <- upper
 	widget.defaults[['init']] <- if(is.null(ini)) rep('', 6) else ini
@@ -406,36 +425,56 @@ e0mcmc.advance.settings <- function(h, ...) {
 	linked.pars.list[['k.ini.up']] <- e$upper[[5]]
 	linked.pars.list[['z.ini.low']] <- e$lower[[6]]
 	linked.pars.list[['z.ini.up']] <- e$upper[[6]]
+	linked.pars.list[['Triangle.prior.low']] <- e$prior.low[1:4]
+	linked.pars.list[['Triangle.prior.up']] <- e$prior.up[1:4]
+	linked.pars.list[['k.prior.low']] <- e$prior.low[[5]]
+	linked.pars.list[['k.prior.up']] <- e$prior.up[[5]]
+	linked.pars.list[['z.prior.low']] <- e$prior.low[[6]]
+	linked.pars.list[['z.prior.up']] <- e$prior.up[[6]]
 		
-	ini.normal.f <- gframe("<span  color='#0B6138'>Normal initial values</span>", markup=TRUE, cont=normal.g,
+	ini.normal.f <- gframe("<span  color='#0B6138'>Normal priors for country specific parameters</span>", markup=TRUE, container=normal.g,
 								horizontal=FALSE)
-	nini.flo <- glayout(cont=ini.normal.f)
+	nini.flo <- glayout(container=ini.normal.f)
 	
 	l <- 1 # row 1
 	nini.flo[l,1] <- ''
-	nini.flo[l,2] <- 'init mean'
-	nini.flo[l,3] <- 'init sd'
-	nini.flo[l,4] <- 'width'
+	nini.flo[l,2] <- '   prior\nlower b.'
+	nini.flo[l,3] <- '   prior\nupper b.'
+	nini.flo[l,4] <- ' init\nmean'
+	nini.flo[l,5] <- 'init\n sd'
+	nini.flo[l,6] <- 'width'
 
+	prior.c.low <- c(defaults$Triangle.c.prior.low, defaults$k.c.prior.low, defaults$z.c.prior.low)
+	prior.c.up <- c(defaults$Triangle.c.prior.up, defaults$k.c.prior.up, defaults$z.c.prior.up)
 	ini.c.means <- c(defaults$Triangle.c.ini.norm[[1]], 
 					defaults$k.c.ini.norm[1], defaults$z.c.ini.norm[1])
 	ini.c.sd <- c(defaults$Triangle.c.ini.norm[[2]], 
 					defaults$k.c.ini.norm[2], defaults$z.c.ini.norm[2])
 	c.width <- c(defaults$Triangle.c.width, defaults$k.c.width, defaults$z.c.width)
-	e$c.means <- e$c.sd <- e$c.width <- NULL
+	e$c.low <- e$c.up <- e$c.means <- e$c.sd <- e$c.width <- NULL
 	c.labels <- paste('<span>', c(paste('Triangle<sup>c</sup><sub>', 1:4, '</sub>', sep=''), 
 						'k<sup>c</sup>', 'z<sup>c</sup>'), ':</span>', sep='')
 	for (i in 1:6) {
 		row <- l + i
-		nini.flo[row,1] <- glabel(c.labels[i], markup=TRUE, cont=nini.flo)
-		e$c.means <- c(e$c.means, nini.flo[row,2] <- gedit(ini.c.means[i], width=5, cont=nini.flo))
-		e$c.sd <- c(e$c.sd, nini.flo[row,3] <- gedit(ini.c.sd[i], width=5, cont=nini.flo))
-		e$c.width <- c(e$c.width, nini.flo[row,4] <- gedit(c.width[i], width=5, cont=nini.flo))
+		nini.flo[row,1] <- glabel(c.labels[i], markup=TRUE, container=nini.flo)
+		e$c.low <- c(e$c.low, nini.flo[row,2] <- gedit(prior.c.low[i], width=5, container=nini.flo))
+		e$c.up <- c(e$c.up, nini.flo[row,3] <- gedit(prior.c.up[i], width=5, container=nini.flo))
+		e$c.means <- c(e$c.means, nini.flo[row,4] <- gedit(ini.c.means[i], width=5, container=nini.flo))
+		e$c.sd <- c(e$c.sd, nini.flo[row,5] <- gedit(ini.c.sd[i], width=5, container=nini.flo))
+		e$c.width <- c(e$c.width, nini.flo[row,6] <- gedit(c.width[i], width=5, container=nini.flo))
 	}
+	widget.defaults[['c.low']] <- prior.c.low
+	widget.defaults[['c.up']] <- prior.c.up
 	widget.defaults[['c.means']] <- ini.c.means
 	widget.defaults[['c.sd']] <- ini.c.sd
 	widget.defaults[['c.width']] <- c.width
 
+	linked.pars.list[['Triangle.c.prior.low']] <- e$c.low[1:4]
+	linked.pars.list[['Triangle.c.prior.up']] <- e$c.up[1:4]
+	linked.pars.list[['k.c.prior.low']] <- e$c.low[[5]]
+	linked.pars.list[['k.c.prior.up']] <- e$c.up[[5]]
+	linked.pars.list[['z.c.prior.low']] <- e$c.low[[6]]
+	linked.pars.list[['z.c.prior.up']] <- e$c.up[[6]]
 	linked.pars.tuple[['Triangle.c.ini.norm']] <- list(e$c.means[1:4], e$c.sd[1:4])
 	linked.pars.tuple[['k.c.ini.norm']] <- c(e$c.means[[5]], e$c.sd[[5]])
 	linked.pars.tuple[['z.c.ini.norm']] <- c(e$c.means[[6]], e$c.sd[[6]])
@@ -443,15 +482,15 @@ e0mcmc.advance.settings <- function(h, ...) {
 	linked.pars.list[['k.c.width']] <-  e$c.width[[5]]
 	linked.pars.list[['z.c.width']] <-  e$c.width[[6]]
 
-	gamma.uniform.g <- ggroup(horizontal=TRUE, cont=priors.f)
-	priors.gamma.f <- gframe("<span  color='#0B6138'>Gamma priors</span>", markup=TRUE, cont=gamma.uniform.g,
+	gamma.uniform.g <- ggroup(horizontal=TRUE, container=priors.f)
+	priors.gamma.f <- gframe("<span  color='#0B6138'>Gamma priors</span>", markup=TRUE, container=gamma.uniform.g,
 								horizontal=FALSE)
-	shape.g <- ggroup(horizontal=TRUE, cont=priors.gamma.f)
-	glabel('shape: nu', cont=shape.g)
-	e$nu <- gedit(defaults$nu, width=3, cont=shape.g)
-	glabel('/2', cont=shape.g)
+	shape.g <- ggroup(horizontal=TRUE, container=priors.gamma.f)
+	glabel('shape: nu', container=shape.g)
+	e$nu <- gedit(defaults$nu, width=3, container=shape.g)
+	glabel('/2', container=shape.g)
 	
-	gamma.flo <- glayout(cont=priors.gamma.f)
+	gamma.flo <- glayout(container=priors.gamma.f)
 	
 	l <- 1 # row 1
 	gamma.flo[l,1] <- ''
@@ -472,9 +511,9 @@ e0mcmc.advance.settings <- function(h, ...) {
 	e$tau <- e$center <- NULL
 	for (i in 1:6) {
 		row <- l + i
-		gamma.flo[row,1] <- glabel(g.labels[i], markup=TRUE, cont=gamma.flo)
-		e$tau <- c(e$tau, gamma.flo[row,2] <- gedit(defaults$tau[i], width=5, cont=gamma.flo))
-		e$center <- c(e$center, gamma.flo[row,3] <- gedit(centers[i], width=5, cont=gamma.flo))
+		gamma.flo[row,1] <- glabel(g.labels[i], markup=TRUE, container=gamma.flo)
+		e$tau <- c(e$tau, gamma.flo[row,2] <- gedit(defaults$tau[i], width=5, container=gamma.flo))
+		e$center <- c(e$center, gamma.flo[row,3] <- gedit(centers[i], width=5, container=gamma.flo))
 		addHandlerChanged(e$tau[[i]], action=list(idx=i), handler=function(h1,...) {
 			blockHandler(e$center[[h1$action$idx]])
 			svalue(e$center[[h1$action$idx]]) <- round(sqrt(2*as.numeric(svalue(e$tau[[h1$action$idx]]))/as.numeric(svalue(e$nu))),2)
@@ -485,9 +524,9 @@ e0mcmc.advance.settings <- function(h, ...) {
 			svalue(e$tau[[h1$action$idx]]) <- as.numeric(svalue(e$center[[h1$action$idx]]))^2 * as.numeric(svalue(e$nu))/2
 			unblockHandler(e$tau[[h1$action$idx]])
 			})
-		e$lambda.lower <- c(e$lambda.lower, gamma.flo[row,4] <- gedit(lambda.lower[i], width=7, cont=gamma.flo))
-		e$lambda.upper <- c(e$lambda.upper, gamma.flo[row,5] <-  gedit(lambda.upper[i], width=7, cont=gamma.flo))
-		e$lambda.init  <- c(e$lambda.init, gamma.flo[row,6] <- gedit(lambda.ini[i], width=12, cont=gamma.flo))
+		e$lambda.lower <- c(e$lambda.lower, gamma.flo[row,4] <- gedit(lambda.lower[i], width=7, container=gamma.flo))
+		e$lambda.upper <- c(e$lambda.upper, gamma.flo[row,5] <-  gedit(lambda.upper[i], width=7, container=gamma.flo))
+		e$lambda.init  <- c(e$lambda.init, gamma.flo[row,6] <- gedit(lambda.ini[i], width=12, container=gamma.flo))
 		addHandlerChanged(e$lambda.init[[i]], action=list(idx=i), handler=function(h1,...) {
 						isempty <- nchar(svalue(e$lambda.init[[h1$action$idx]]))==0
 						enabled(e$lambda.lower[[h1$action$idx]]) <- isempty
@@ -514,19 +553,19 @@ e0mcmc.advance.settings <- function(h, ...) {
 	linked.pars.list[['lambda.z.ini.low']] <- e$lambda.lower[[6]]
 	linked.pars.list[['lambda.z.ini.up']] <- e$lambda.upper[[6]]
 
-	info.gamma.glo <- glayout(cont=priors.gamma.f)
+	info.gamma.glo <- glayout(container=priors.gamma.f)
 	info.gamma.glo[1,1, expand=FALSE, anchor=c(-1,0)] <- glabel('"center" is the prior center for sigma: sqrt(2*tau/nu)', 
-					cont =  info.gamma.glo)
+					container=  info.gamma.glo)
 	info.gamma.glo[2,1, expand=FALSE] <- glabel('After editing a cell, hit Enter and wait for the other cells to be updated.', 
-				cont =  info.gamma.glo)
-	#info.gamma.glo[4,1, expand=FALSE] <- glabel('', cont =  info.gamma.glo)
+				container=  info.gamma.glo)
+	#info.gamma.glo[4,1, expand=FALSE] <- glabel('', container=  info.gamma.glo)
 	
-	uniform.dlf.g <- ggroup(horizontal=FALSE, cont=gamma.uniform.g, expand=TRUE)
+	uniform.dlf.g <- ggroup(horizontal=FALSE, container=gamma.uniform.g, expand=FALSE)
 
 	
-	priors.unif.f <- gframe("<span  color='#0B6138'>Uniform priors</span>", markup=TRUE, cont=uniform.dlf.g,
+	priors.unif.f <- gframe("<span  color='#0B6138'>Uniform priors</span>", markup=TRUE, container=uniform.dlf.g,
 								horizontal=TRUE)
-	unif.flo <- glayout(cont=priors.unif.f)
+	unif.flo <- glayout(container=priors.unif.f)
 	l <- 1
 	unif.flo[l,1] <- ''
 	unif.flo[l,2] <- 'init lower'
@@ -535,9 +574,9 @@ e0mcmc.advance.settings <- function(h, ...) {
 	
 	l<-l+1
 	unif.flo[l,1] <- 'omega'
-	e$omega.ini.low <- unif.flo[l,2] <- gedit(defaults$omega.ini.low, width=5, cont=unif.flo)
-	e$omega.ini.up <- unif.flo[l,3] <- gedit(defaults$omega.ini.up, width=5, cont=unif.flo)
-	e$omega.ini <- unif.flo[l,4] <- gedit(defaults$omega.ini, width=10, cont=unif.flo)
+	e$omega.ini.low <- unif.flo[l,2] <- gedit(defaults$omega.ini.low, width=5, container=unif.flo)
+	e$omega.ini.up <- unif.flo[l,3] <- gedit(defaults$omega.ini.up, width=5, container=unif.flo)
+	e$omega.ini <- unif.flo[l,4] <- gedit(defaults$omega.ini, width=10, container=unif.flo)
 	addHandlerChanged(e$omega.ini, handler=function(h1,...) {
 						isempty <- nchar(svalue(e$omega.ini))==0
 						enabled(e$omega.ini.low) <- isempty
@@ -546,30 +585,30 @@ e0mcmc.advance.settings <- function(h, ...) {
 	widget.defaults[['omega.ini']] <- if(is.null(defaults$omega.ini)) '' else defaults$omega.ini
 	
 	addSpace(uniform.dlf.g, 10)
-	dlf.f <- gframe("<span  color='blue'>Double-logistic parameters</span>", markup=TRUE, cont=uniform.dlf.g,
+	dlf.f <- gframe("<span  color='blue'>Double-logistic parameters</span>", markup=TRUE, container=uniform.dlf.g,
 								horizontal=TRUE)
-	glabel('p1:', cont=dlf.f)
-	e$dl.p1 <- gedit(defaults$dl.p1, width=5, cont=dlf.f)
+	glabel('p1:', container=dlf.f)
+	e$dl.p1 <- gedit(defaults$dl.p1, width=5, container=dlf.f)
 	addSpace(dlf.f, 10)
-	glabel('p2:', cont=dlf.f)
-	e$dl.p2 <- gedit(defaults$dl.p2, width=5, cont=dlf.f)
+	glabel('p2:', container=dlf.f)
+	e$dl.p2 <- gedit(defaults$dl.p2, width=5, container=dlf.f)
 
 	addSpring(uniform.dlf.g)
-	info.ini.group <- ggroup(horizontal=FALSE, cont=uniform.dlf.g)
-	glabel('NOTE:', cont=info.ini.group, anchor=c(-1,0))
-	glabel('Leave "init values" blank for the starting values', cont=info.ini.group, anchor=c(-1,0))
-	glabel('being equally distributed between "init lower" and', cont=info.ini.group, anchor=c(-1,0))
-	glabel('"init upper". For specific initial values enter', cont=info.ini.group, anchor=c(-1,0))
-	glabel('one value per chain separated by commas.', cont=info.ini.group, anchor=c(-1,0))
+	info.ini.group <- ggroup(horizontal=FALSE, container=uniform.dlf.g)
+	glabel('NOTE:', container=info.ini.group, anchor=c(-1,0))
+	glabel('Leave "init values" blank for the starting values', container=info.ini.group, anchor=c(-1,0))
+	glabel('being equally distributed between "init lower" and', container=info.ini.group, anchor=c(-1,0))
+	glabel('"init upper". For specific initial values enter', container=info.ini.group, anchor=c(-1,0))
+	glabel('one value per chain separated by commas.', container=info.ini.group, anchor=c(-1,0))
 
 	
 	# Buttons
-	button.g <- ggroup(cont=e$adv.g, horizontal=TRUE)
-	gbutton('Cancel', cont=button.g, handler=function(h, ...) 
+	button.g <- ggroup(container=e$adv.g, horizontal=TRUE)
+	gbutton('Cancel', container=button.g, handler=function(h, ...) 
 					visible(adv.set.win) <- FALSE)
 	addSpring(button.g)
-	e$adv.set.defaultbutton <- gbutton('  Set to Default Values  ', cont=button.g, handler=set.defaults)
-	e$adv.set.okbutton <- gbutton('OK', cont=button.g)
+	e$adv.set.defaultbutton <- gbutton('  Set to Default Values  ', container=button.g, handler=set.defaults)
+	e$adv.set.okbutton <- gbutton('OK', container=button.g)
 	
 	e$linked.pars.list <- linked.pars.list
 	e$linked.pars.tuple <- linked.pars.tuple
