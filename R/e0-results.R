@@ -4,21 +4,21 @@ e0Results.group <- function(g, main.win, parent) {
 	e$sim.dir <- parent$sim.dir
 	graph.defaults <- formals(png)
 
-	nb <- gnotebook(cont=g, expand=TRUE)
+	nb <- gnotebook(container=g, expand=TRUE)
 	
 	traj.g <- ggroup(label="<span color='#0B6138'>e0 trajectories</span>", 
-							markup=TRUE, horizontal=FALSE, cont=nb)
+							markup=TRUE, horizontal=FALSE, container=nb)
 	traj.env <- e0.show.trajectories.group(traj.g, main.win, e)
 	map.g <- ggroup(label="<span color='#0B6138'>e0 world maps</span>", 
-							markup=TRUE, horizontal=FALSE, cont=nb)
+							markup=TRUE, horizontal=FALSE, container=nb)
 	map.env <- e0.show.map.group(map.g, main.win, e)
 	dl.g <- ggroup(label="<span color='#0B6138'>DL curve</span>", 
-							markup=TRUE, horizontal=FALSE, cont=nb)
+							markup=TRUE, horizontal=FALSE, container=nb)
 	dl.env <- e0.show.dl.group(dl.g, main.win, e)
 	traces.g <- ggroup(label="<span color='#0B6138'>Parameter Traces</span>", 
-							markup=TRUE, horizontal=FALSE, cont=nb)
+							markup=TRUE, horizontal=FALSE, container=nb)
 	traces.env <- e0.show.traces.group(traces.g, main.win, e)
-	convergence.g <- ggroup(label="<span color='#0B6138'>Convergence</span>", markup=TRUE, horizontal=FALSE, cont=nb)
+	convergence.g <- ggroup(label="<span color='#0B6138'>Convergence</span>", markup=TRUE, horizontal=FALSE, container=nb)
 	create.convergence.tab(convergence.g, e$sim.dir, type='e0', package='bayesLife', main.win)
 
 	svalue(nb) <- 1
@@ -26,7 +26,6 @@ e0Results.group <- function(g, main.win, parent) {
 
 e0.show.trajectories.group <- function(g, main.win, parent.env) {
 	e <- new.env()
-	mcmc.defaults <- formals(run.e0.mcmc)
 	e$sim.dir <- parent.env$sim.dir
 	e$pred.type <- 'e0'
 	defaults.pred <- formals(e0.predict)
@@ -34,49 +33,65 @@ e0.show.trajectories.group <- function(g, main.win, parent.env) {
 	defaults.traj.all <- formals(e0.trajectories.plot.all)
 		
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
-									horizontal=FALSE, cont=g)
+									horizontal=FALSE, container=g)
 	e$show.traj.country <- create.country.widget(country.f, defaults.traj.all, 
 									main.win, prediction=TRUE, parent.env=e)
 		
 	traj.settings.f <- gframe("<span color='blue'>Trajectories settings</span>", markup=TRUE, 
-								horizontal=TRUE, cont=g)
-	glabel('CI (%):', cont=traj.settings.f)
-	e$pi <- gedit('80, 95', width=7, cont=traj.settings.f)
+								horizontal=TRUE, container=g)
+	glabel('CI (%):', container=traj.settings.f)
+	e$pi <- gedit('80, 95', width=7, container=traj.settings.f)
 
 	addSpace(traj.settings.f, 15)
-	glabel('# trajectories:', cont=traj.settings.f)
-	e$nr.traj <- gedit(20, width=6, cont=traj.settings.f)
-	
+	glabel('# trajectories:', container=traj.settings.f)
+	e$nr.traj <- gedit(20, width=6, container=traj.settings.f)
+	addSpace(traj.settings.f, 15)
+	e$sex <- gdroplist(c('Female', 'Male', 'Both'), container=traj.settings.f, selected=1,
+				handler=function(h,...) {
+					if(svalue(h$obj) == 'Both') {svalue(e$nr.traj) <- 0; svalue(e$pi) <- 95}
+					else {svalue(e$nr.traj) <- 20; svalue(e$pi) <- '80, 95'}
+					enabled(e$TableB.show.traj) <- svalue(h$obj) != 'Both'
+				})	
 	time.f <- gframe("<span color='blue'>Time range</span>", markup=TRUE, 
-									horizontal=TRUE, cont=g)
-	glabel('From year:', cont=time.f)
-	e$start.year <- gedit(mcmc.defaults$start.year, width=4, cont=time.f)
-	glabel('To year:', cont=time.f)
-	e$end.year <- gedit(defaults.pred$end.year, width=4, cont=time.f)
+									horizontal=TRUE, container=g)
+	glabel('From year:', container=time.f)
+	e$start.year <- gedit('', width=4, container=time.f)
+	glabel('To year:', container=time.f)
+	e$end.year <- gedit('', width=4, container=time.f)
 	
 	graph.f <- gframe("<span color='blue'>Advanced graph parameters</span>", markup=TRUE, 
-									horizontal=FALSE, cont=g)
+									horizontal=FALSE, container=g)
 	e$graph.pars <- create.graph.pars.widgets(graph.f, main.win=main.win)
 	addSpring(g)
-	button.g <- ggroup(horizontal=TRUE, cont=g)
+	button.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='e0.trajectories.plot', package='bayesLife', parent.group=button.g,
 						parent.window=main.win)
 	addSpring(button.g)
 	
-	gbutton('Generate Script', cont=button.g, handler=show.e0.traj, 
+	gbutton('Generate Script', container=button.g, handler=show.e0.traj, 
 								action=list(mw=main.win, env=e, type='plot', script=TRUE))
 	addSpace(button.g, 5)
 	TableB.show.traj.act <- gaction(label='Table', icon='dataframe', handler=show.e0.traj, 
 						action=list(mw=main.win, env=e, type='table', script=FALSE))
 	GraphB.show.traj.act <- gaction(label='Graph', icon='lines', handler=show.e0.traj, 
 						action=list(mw=main.win, env=e, type='plot', script=FALSE))
-	e$TableB.show.traj <- gbutton(action=TableB.show.traj.act, cont=button.g)
-	gbutton(action=GraphB.show.traj.act, cont=button.g)
+	e$TableB.show.traj <- gbutton(action=TableB.show.traj.act, container=button.g)
+	gbutton(action=GraphB.show.traj.act, container=button.g)
 	return(e)
 }
 
+get.additional.e0.param <- function(e, ...) {
+	sex <- svalue(e$sex)
+	param <- list(both.sexes= sex=='Both', joint.male= sex == 'Male')
+	return(list(add=param, plot=c('pi', 'xlim', 'nr.traj', 'both.sexes'), 
+					pred=c('joint.male'),
+					table=c('pi', 'country'), table.decimal=2))
+	}
+	
 show.e0.traj <- function(h, ...) {
 	e <- h$action$env
+	pred.type <- if(is.null(h$action$pred.type)) 'e0' else h$action$pred.type
+	package <- if(is.null(h$action$package)) 'bayesLife' else h$action$package
 	if(!has.required.arguments(list(sim.dir='Simulation directory'), env=e)) return()
 	show.type <- h$action$type
 	country.pars <- get.country.code.from.widget(e$show.traj.country$country.w, e$show.traj.country, 
@@ -91,44 +106,47 @@ show.e0.traj <- function(h, ...) {
 					get.parameters(list(text=c('output.dir', 'output.type'), 
 										logical='verbose', numeric='country'), 
 									param.env.rest, quote=TRUE,
-									retrieve.from.widget=FALSE))
-
-	param.pred <- param.env['sim.dir']
+									retrieve.from.widgets=FALSE))
+	add.param.names <- do.call(paste('get.additional.',pred.type, '.param', sep=''), 
+									list(e, script=h$action$script, type=show.type))
+	param.env <- c(param.env, add.param.names[['add']])
+	param.pred <- param.env[c('sim.dir', add.param.names[['pred']])]
 	
-	pred <- do.call('get.e0.prediction', param.pred)
+	pred <- do.call(paste('get.', pred.type, '.prediction', sep=''), param.pred)
 	if(h$action$script) {
-		cmd <- paste('pred <- get.e0.prediction(', paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
+		cmd <- paste('pred <- get.', pred.type, '.prediction(', 
+					paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
 						')\n', sep='')
 	} else {	
 		cmd <- ''
 	}
 	xmin <- param.env$start.year
 	xmax <- param.env$end.year
-	if(nchar(xmin) > 0 || nchar(xmax) > 0) {
-		param.env.xlim <- list(xlim=paste(if(nchar(xmin)>0) xmin else pred$mcmc.set$meta$start.year,
-									 if(nchar(xmax)>0) xmax else pred$end.year, sep=', '))
+	if(!is.null(xmin) || !is.null(xmax)) {
+		param.env.xlim <- list(xlim=paste(if(!is.null(xmin)) xmin else pred$mcmc.set$meta$start.year,
+									 if(!is.null(xmax)) xmax else pred$end.year, sep=', '))
 		param.env <- c(param.env, get.parameters(list(numvector='xlim'), param.env.xlim, quote=h$action$script,
-									retrieve.from.widget=FALSE))
+									retrieve.from.widgets=FALSE))
 	}
 
 	pars.value <- svalue(e$graph.pars)
 	if (show.type == 'plot') {
-		param.plot1c <- param.env[c('pi', 'xlim', 'nr.traj')]
+		param.plot1c <- param.env[add.param.names[['plot']][is.element(add.param.names[['plot']], names(param.env))]]
 		if(is.element('country', names(param.env))) param.plot1c <- c(param.plot1c, param.env['country'])
 		if(!is.null(param.env$country)) { # one country
-			cmd <- paste(cmd, 'e0.trajectories.plot(pred,',
+			cmd <- paste(cmd, paste(pred.type, '.trajectories.plot(pred,', sep=''),
 						paste(paste(names(param.plot1c), param.plot1c, sep='='), collapse=', '), ',',
 						pars.value, ')')
 			if (h$action$script) {
-				script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-				gtext(cmd, cont=script.text)
+				script.text <- gwindow(paste(package,'commands'), parent=h$action$mw)
+				gtext(cmd, container=script.text)
 			} else {
 				create.graphics.window(parent=h$action$mw, title=paste("Trajectories for", country.pars$name))
 				eval(parse(text=cmd))
 			}
 		} else { # all countries
 			param.plot.allc <- param.env[c(names(param.plot1c), 'output.dir', 'output.type',  'verbose')]
-			cmd <- paste(cmd, 'e0.trajectories.plot.all(pred, ', 
+			cmd <- paste(cmd, paste(pred.type, '.trajectories.plot.all(pred, ', sep=''), 
 						paste(paste(names(param.plot.allc), param.plot.allc, sep='='), collapse=', '), sep='')
 			if(!is.null(pars.value)) {
 				if(nchar(pars.value)>0)
@@ -136,71 +154,81 @@ show.e0.traj <- function(h, ...) {
 			}
 			cmd <- paste(cmd, ')', sep='')
 			if (h$action$script) {
-				script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-				gtext(cmd, cont=script.text)
+				script.text <- gwindow(paste(package,'commands'), parent=h$action$mw)
+				gtext(cmd, container=script.text)
 			} else {
 				eval(parse(text=cmd))
 			}
 		}
 	} else {
 		# Table
-		param.table <- param.env[c('pi', 'country')]
-		table.values <- do.call('e0.trajectories.table', c(list(e0.pred=pred), param.table))
-		table.values <- round(table.values[!apply(is.na(table.values), 1, all),],2)
+		param.table <- param.env[add.param.names[['table']][is.element(add.param.names[['table']], names(param.env))]]
+		table.values <- do.call(paste(pred.type, '.trajectories.table', sep=''), 
+							c(list(pred), param.table))
+		table.values <- round(table.values[!apply(is.na(table.values), 1, all),],
+								add.param.names[['table.decimal']])
 		table.values <- cbind(rownames(table.values), table.values)
 		colnames(table.values)[1] <- 'year'
-		win <- gwindow(country.pars$name, parent=h$action$mw, height=max(min(22.2*(dim(table.values)[1]+1),600), 100))
-		g <- ggroup(cont=win, horizontal=FALSE, expand=TRUE)
-		gt <- gtable(table.values, cont=g, expand=TRUE)
-		gbutton('Print to R Console', cont=g, handler=function(h,...){
-										print(do.call('e0.trajectories.table', c(list(e0.pred=pred), param.table)))})
+		win <- gwindow(do.call(paste('get.', pred.type, '.table.title', sep=''), 
+						list(country.pars$name, pred)),
+					parent=h$action$mw, height=max(min(22.2*(dim(table.values)[1]+1),600), 100))
+		g <- ggroup(container=win, horizontal=FALSE, expand=TRUE)
+		gt <- gtable(table.values, container=g, expand=TRUE)
+		gbutton('Print to R Console', container=g, handler=function(h,...){
+										print(do.call(paste(pred.type, '.trajectories.table', sep=''), 
+												c(list(pred), param.table)))})
 	}
 }
 
+get.e0.table.title <- function(country, pred) 
+	return (paste(country, '-', bayesLife:::get.sex.label(pred$mcmc.set$meta)))
+	
 e0.show.map.group <- function(g, main.win, parent.env) {
 	e <- new.env()
 	e$sim.dir <- parent.env$sim.dir
 	set.f <- gframe("<span color='blue'>Map settings</span>", markup=TRUE, 
-									horizontal=FALSE, cont=g)
-	set.g1 <- ggroup(horizontal=TRUE, cont=set.f)
-	glabel('Percentile:', cont=set.g1)
+									horizontal=FALSE, container=g)
+	set.g1 <- ggroup(horizontal=TRUE, container=set.f)
+	glabel('Percentile:', container=set.g1)
 	e$percentiles <- list('median'=0.5, 'lower 80'=0.1, 'upper 80'=0.9, 'lower 90'=0.05, 'upper 90'=0.95,
 						'lower 95'=0.025, 'upper 95'=0.975, 'lower 60'=0.2, 'upper 60'=0.8,
 						'lower 50'=0.25, 'upper 50'=0.75, 'lower 40'=0.3, 'upper 40'=0.7, 
 						'lower 20'=0.4, 'upper 20'=0.6
 						)
-	e$map.percentile <- gdroplist(names(e$percentiles), cont=set.g1)
+	e$map.percentile <- gdroplist(names(e$percentiles), container=set.g1)
 	addSpace(set.g1, 5)
-	glabel('Measure:', cont=set.g1)
-	e$map.measure <- gdroplist(c('e0', bayesLife:::e0.parameter.names.cs.extended()), cont=set.g1)
+	glabel('Measure:', container=set.g1)
+	e$map.measure <- gdroplist(c('e0', bayesLife:::e0.parameter.names.cs.extended()), container=set.g1)
 	addSpace(set.g1, 5)
-	e$map.same.scale <- gcheckbox('Same scale for all maps', checked=TRUE, cont=set.g1)
+	e$map.same.scale <- gcheckbox('Same scale for all maps', checked=TRUE, container=set.g1)
 	
-	set.g3 <- ggroup(horizontal=TRUE, cont=set.f)
-	glabel('Bounds:    ', cont=set.g3)
-	e$map.bounds <- gdroplist(c(80, 90, 95, 60, 50, 40, 20), cont=set.g3)
-	glabel('%', cont=set.g3)
+	set.g3 <- ggroup(horizontal=TRUE, container=set.f)
+	glabel('Bounds:    ', container=set.g3)
+	e$map.bounds <- gdroplist(c(80, 90, 95, 60, 50, 40, 20), container=set.g3)
+	glabel('%', container=set.g3)
+	addSpace(set.g3, 15)
+	e$sex <- gdroplist(c('Female', 'Male'), container=set.g3, selected=1)	
 	
-	set.g2 <- ggroup(horizontal=TRUE, cont=set.f)
-	glabel('Use R package:', cont=set.g2)
+	set.g2 <- ggroup(horizontal=TRUE, container=set.f)
+	glabel('Use R package:', container=set.g2)
 	e$map.package <- gradio(c('rworldmap', 'googleVis'), horizontal = TRUE, 
 						handler=function(h, ...) {
 							enabled(e$map.bounds) <- svalue(h$obj) == 'googleVis';
 							enabled(e$map.same.scale) <- svalue(h$obj) == 'rworldmap'}, 
-						cont=set.g2)
+						container=set.g2)
 	enabled(e$map.bounds) <- svalue(e$map.package) == 'googleVis'
 	enabled(e$map.same.scale) <- svalue(e$map.package) == 'rworldmap'
 	addSpring(g)
-	bg <- ggroup(horizontal=TRUE, cont=g)
+	bg <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='e0.map', package='bayesLife', parent.group=bg,
 						parent.window=main.win)
 	addSpring(bg)
-	gbutton('Generate Script', cont=bg, handler=e0.showMap, 
+	gbutton('Generate Script', container=bg, handler=e0.showMap, 
 								action=list(mw=main.win, env=e, script=TRUE))
 	addSpace(bg, 5)
 	GraphB.map <- gaction(label=' Show Map ', handler=e0.showMap, 
 						action=list(mw=main.win, env=e, script=FALSE))
-	gbutton(action=GraphB.map, cont=bg)
+	gbutton(action=GraphB.map, container=bg)
 	
 }
 
@@ -216,6 +244,8 @@ e0.showMap <- function(h, ...) {
 	par.name <- svalue(e$map.measure)
 	bounds <- svalue(e$map.bounds)
 	package <- svalue(e$map.package)
+	sex <- svalue(e$sex)
+	param.pred$joint.male <- sex == 'Male'
 	map.function <- if(package == 'rworldmap') 'e0.map' else 'e0.map.gvis'
 	if(h$action$script) {
 		cmd <- paste('pred <- get.e0.prediction(', paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
@@ -234,7 +264,7 @@ e0.showMap <- function(h, ...) {
 			cmd <- paste(cmd, ')', sep='')
 		}
 		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-		gtext(cmd, cont=script.text)
+		gtext(cmd, container=script.text)
 	} else {
 		pred <- do.call('get.e0.prediction', param.pred)
 		if (par.name == 'e0' && package == 'rworldmap') {
@@ -258,34 +288,39 @@ e0.show.dl.group <- function(g, main.win, parent.env) {
 	defaults.dl <- formals(e0.DLcurve.plot)
 	defaults.dl.all <- formals(e0.DLcurve.plot.all)
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
-							horizontal=FALSE, cont=g)
+							horizontal=FALSE, container=g)
 	e$dlc.country <- create.country.widget(country.f, defaults.dl.all, main.win, prediction=FALSE, 
 											parent.env=e)
 	dl.f <- gframe("<span color='blue'>DL curve settings</span>", markup=TRUE, 
-							horizontal=TRUE, cont=g)
-	glabel('CI (%):', cont=dl.f)
-	e$pi <- gedit('80, 95', width=7, cont=dl.f)
-	glabel('Burnin:', cont=dl.f)
-	e$burnin <- gedit(defaults.dl$burnin, width=5, cont=dl.f)
-	glabel('e0 min, max:', cont=dl.f)
-	e$e0.lim <- gedit('20, 90', width=7, cont=dl.f)
-	glabel('# curves:', cont=dl.f)
-	e$nr.curves <- gedit(20, width=6, cont=dl.f)
+							horizontal=FALSE, container=g)
+	dlfg1 <- ggroup(horizontal=TRUE, container=dl.f)
+	glabel('CI (%):', container=dlfg1)
+	e$pi <- gedit('80, 95', width=7, container=dlfg1)
+	glabel('Burnin:', container=dlfg1)
+	e$burnin <- gedit(defaults.dl$burnin, width=5, container=dlfg1)
+	glabel('e0 min, max:', container=dlfg1)
+	e$e0.lim <- gedit(defaults.dl$e0.lim, width=7, container=dlfg1)
+	glabel('# curves:', container=dlfg1)
+	e$nr.curves <- gedit(defaults.dl$nr.curves, width=6, container=dlfg1)
+	
+	dlfg2 <- ggroup(horizontal=TRUE, container=dl.f)
+	e$predictive.distr <- gcheckbox('Predictive distribution', 
+							checked=defaults.dl$predictive.distr, container=dlfg2)
 	
 	graph.f <- gframe("<span color='blue'>Advanced graph parameters</span>", markup=TRUE, 
-						horizontal=FALSE, cont=g)
+						horizontal=FALSE, container=g)
 	e$graph.pars <- create.graph.pars.widgets(graph.f, main.win=main.win)
 	addSpring(g)
-	button.g <- ggroup(horizontal=TRUE, cont=g)
+	button.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='e0.DLcurve.plot', package='bayesLife', parent.group=button.g,
 						parent.window=main.win)
 	addSpring(button.g)
-	gbutton('Generate Script', cont=button.g, handler=e0.showDLcurve, 
+	gbutton('Generate Script', container=button.g, handler=e0.showDLcurve, 
 								action=list(mw=main.win, env=e, script=TRUE))
 	addSpace(button.g, 5)
 	GraphB.dlc <- gaction(label='Graph', icon='lines', handler=e0.showDLcurve, 
 						action=list(mw=main.win, env=e, script=FALSE))
-	gbutton(action=GraphB.dlc, cont=button.g)
+	gbutton(action=GraphB.dlc, container=button.g)
 
 }
 
@@ -295,7 +330,8 @@ e0.showDLcurve <- function(h, ...) {
 	country.pars <- get.country.code.from.widget(e$dlc.country$country.w, e$dlc.country)
 	if(is.null(country.pars)) return(NULL)
 	param.names.all <- list(text='sim.dir', numvector=c('pi', 'e0.lim'),
-							numeric=c('nr.curves', 'burnin'))
+							numeric=c('nr.curves', 'burnin'),
+							logical='predictive.distr')
 	param.env <- get.parameters(param.names.all, env=e, quote=h$action$script)
 	param.env.rest <- list(country=country.pars$code, output.dir=country.pars$output.dir,
 							output.type=country.pars$output.type, verbose=TRUE)
@@ -303,9 +339,8 @@ e0.showDLcurve <- function(h, ...) {
 					get.parameters(list(text=c('output.dir', 'output.type'), 
 										logical='verbose', numeric='country'), 
 									param.env.rest, quote=TRUE,
-									retrieve.from.widget=FALSE))
+									retrieve.from.widgets=FALSE))
 
-	param.names.graph <- list(numvector='pi', numeric=c('country', 'nr.curves', 'burnin', 'tfr.max'))
 	param.mcmc <- param.env['sim.dir']
 	if(h$action$script) {
 		cmd <- paste('m <- get.e0.mcmc(', paste(paste(names(param.mcmc), param.mcmc, sep='='), collapse=', '), 
@@ -316,7 +351,7 @@ e0.showDLcurve <- function(h, ...) {
 	}
 	pars.value <- svalue(e$graph.pars)
 	param.plot1c <- list()
-	for (par in c('pi', 'nr.curves', 'e0.lim', 'country', 'burnin')) 
+	for (par in c('pi', 'nr.curves', 'e0.lim', 'country', 'burnin', 'predictive.distr')) 
 		if(is.element(par, names(param.env))) param.plot1c <- c(param.plot1c, param.env[par])
 
 	if(!is.null(country.pars$code)) { # one country
@@ -325,7 +360,7 @@ e0.showDLcurve <- function(h, ...) {
 						pars.value, ')', sep='')
 		if (h$action$script) {
 			script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-			gtext(cmd, cont=script.text)
+			gtext(cmd, container=script.text)
 		} else {
 			create.graphics.window(parent=h$action$mw, title=paste("Double Logistic Curves for", country.pars$name))
 			eval(parse(text=cmd))
@@ -337,7 +372,7 @@ e0.showDLcurve <- function(h, ...) {
 					pars.value, ')', sep='')
 		if (h$action$script) {
 			script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-			gtext(cmd, cont=script.text)
+			gtext(cmd, container=script.text)
 		} else {
 			eval(parse(text=cmd))
 		}
@@ -349,8 +384,8 @@ e0.show.traces.group <- function(g, main.win, parent.env) {
 	e$sim.dir <- parent.env$sim.dir
 	e$pred.type <- 'e0'
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
-							horizontal=TRUE, cont=g)
-	e$cs.chb <- gcheckbox("Country specific", checked=FALSE, cont=country.f,
+							horizontal=TRUE, container=g)
+	e$cs.chb <- gcheckbox("Country specific", checked=FALSE, container=country.f,
 							handler=function(h,...) {
 								if (svalue(h$obj)) {
 									enabled(e$par.cs.dl)<-!svalue(e$pars.chb)
@@ -367,10 +402,10 @@ e0.show.traces.group <- function(g, main.win, parent.env) {
 	e$country <- create.country.widget(country.f,  main.win=main.win, show.all=FALSE, prediction=FALSE, 
 											parent.env=e)
 	par.f <- gframe("<span color='blue'>Parameter settings</span>", markup=TRUE, 
-							horizontal=FALSE, cont=g)
-	par.g1 <- ggroup(horizontal=TRUE, cont=par.f)
-	glabel('Parameters:', cont=par.g1)
-	e$pars.chb <- gcheckbox("all", cont=par.g1, checked=TRUE, 
+							horizontal=FALSE, container=g)
+	par.g1 <- ggroup(horizontal=TRUE, container=par.f)
+	glabel('Parameters:', container=par.g1)
+	e$pars.chb <- gcheckbox("all", container=par.g1, checked=TRUE, 
 							handler=function(h,...) 
 								if(svalue(e$cs.chb)) {
 									enabled(e$par.cs.dl)<-!svalue(h$obj)
@@ -380,33 +415,33 @@ e0.show.traces.group <- function(g, main.win, parent.env) {
 									enabled(e$par.cs.dl)<-FALSE
 							})
 	addSpace(par.g1, 15)
-	e$par.dl <- gdroplist(e0.parameter.names(), cont=par.g1)
+	e$par.dl <- gdroplist(e0.parameter.names(), container=par.g1)
 	enabled(e$par.dl) <- FALSE
-	e$par.cs.dl <- gdroplist(e0.parameter.names.cs(), cont=par.g1)
+	e$par.cs.dl <- gdroplist(e0.parameter.names.cs(), container=par.g1)
 	enabled(e$par.cs.dl) <- FALSE
 	addSpace(par.f, 10)
-	glabel('# points:', cont=par.g1)
-	e$nr.points <- gedit(100, width=5, cont=par.g1, coerce.with=as.numeric)
+	glabel('# points:', container=par.g1)
+	e$nr.points <- gedit(100, width=5, container=par.g1, coerce.with=as.numeric)
 	
-	par.g2 <- ggroup(horizontal=TRUE, cont=par.f)
-	glabel("Burnin:", cont=par.g2)
-	e$burnin <- gedit(0, width=5, cont=par.g2, coerce.with=as.numeric)
-	glabel("Thin:", cont=par.g2)
-	e$thin <- gedit(1, width=5, cont=par.g2, coerce.with=as.numeric)
+	par.g2 <- ggroup(horizontal=TRUE, container=par.f)
+	glabel("Burnin:", container=par.g2)
+	e$burnin <- gedit(0, width=5, container=par.g2, coerce.with=as.numeric)
+	glabel("Thin:", container=par.g2)
+	e$thin <- gedit(1, width=5, container=par.g2, coerce.with=as.numeric)
 	
 	enabled(e$country$country.w) <- svalue(e$cs.chb)
 	enabled(e$country$country.select.b) <- svalue(e$cs.chb)
 	addSpring(g)
-	button.g <- ggroup(horizontal=TRUE, cont=g)
+	button.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='e0.partraces.plot', package='bayesLife', parent.group=button.g,
 						parent.window=main.win)	
 	addSpring(button.g)
 	SummaryB.traces <- gaction(label='Show summary', handler=e0.showParTraces, 
 						action=list(mw=main.win, env=e, print.summary=TRUE))
-	gbutton(action=SummaryB.traces, cont=button.g)
+	gbutton(action=SummaryB.traces, container=button.g)
 	GraphB.traces <- gaction(label='Graph', icon='lines', handler=e0.showParTraces, 
 						action=list(mw=main.win, env=e, print.summary=FALSE))
-	gbutton(action=GraphB.traces, cont=button.g)
+	gbutton(action=GraphB.traces, container=button.g)
 }
 
 e0.showParTraces <- function(h, ...) {
@@ -467,7 +502,7 @@ e0.showParTraces <- function(h, ...) {
 		sink()
 		close(con)
 		sum.win <- gwindow('MCMC summary', parent=h$action$mw, width=500, height=400)
-		gtext(mc.summary, cont=sum.win)
+		gtext(mc.summary, container=sum.win)
 	}
 }
 

@@ -9,11 +9,13 @@ The function launches Graphical User Interface for the packages \pkg{\link[bayes
 }
 \usage{
 bayesDem.go(wpp.year.tfr = tfr.wpp.year.default, 
-    wpp.year.e0 = e0.wpp.year.default)
+    wpp.year.e0 = e0.wpp.year.default,
+    wpp.year.pop = pop.wpp.year.default)
 }
 \arguments{
   \item{wpp.year.tfr}{WPP year used in the bayesTFR package. Default is 2010. Note that the GUI will work only with values for which observed data are available in the bayesTFR package. Currently it is 2010 and 2008, see \pkg{\link[bayesTFR]{UN2010}}.}
   \item{wpp.year.e0}{WPP year used in the bayesLife package. Default is 2010. Currently years 2010 and 2008 are available, see \pkg{\link[bayesLife]{UN2010e0}}.}
+   \item{wpp.year.pop}{WPP year used in the bayesPop package. Default is 2010. Currently years 2010 and 2008 are available, see \code{\link[bayesPop:bayesPop-package]{bayesPop}}.}
 }
 %\details{
 %%  ~~ If necessary, more details than the description above ~~
