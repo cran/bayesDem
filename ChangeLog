@@ -1,4 +1,9 @@
-1.5-1
+1.6-0 (05/03/2012)
+-----
+In the Life Expectancy tab - results - trajectories: Added options of plotting 
+marginal and joint distribution of female-male e0.
+
+1.5-1 (04/13/2012)
 -----
 Partial argument 'cont' to gwidgets functions replaced by 'container'. 
 

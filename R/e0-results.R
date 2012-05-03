@@ -46,12 +46,18 @@ e0.show.trajectories.group <- function(g, main.win, parent.env) {
 	glabel('# trajectories:', container=traj.settings.f)
 	e$nr.traj <- gedit(20, width=6, container=traj.settings.f)
 	addSpace(traj.settings.f, 15)
-	e$sex <- gdroplist(c('Female', 'Male', 'Both'), container=traj.settings.f, selected=1,
+	e$sex <- gdroplist(c('Female', 'Male', 'Both Marginal', 'Both Joint', 'Gap'), container=traj.settings.f, selected=1,
 				handler=function(h,...) {
-					if(svalue(h$obj) == 'Both') {svalue(e$nr.traj) <- 0; svalue(e$pi) <- 95}
-					else {svalue(e$nr.traj) <- 20; svalue(e$pi) <- '80, 95'}
-					enabled(e$TableB.show.traj) <- svalue(h$obj) != 'Both'
-				})	
+					if(svalue(h$obj) == 'Both Marginal') {svalue(e$nr.traj) <- 0; svalue(e$pi) <- 95}
+					if(svalue(h$obj) == 'Both Joint') {svalue(e$nr.traj) <- 500; svalue(e$pi) <- 95}
+					if(svalue(h$obj) == 'Gap') {svalue(e$nr.traj) <- 0; svalue(e$pi) <- '80, 95'}
+					if(is.element(svalue(h$obj), c('Female', 'Male'))) {svalue(e$nr.traj) <- 20; svalue(e$pi) <- '80, 95'}
+					enabled(e$TableB.show.traj) <- is.element(svalue(h$obj), c('Female', 'Male'))
+					enabled(e$years) <- svalue(h$obj) == 'Both Joint'
+				})
+	glabel('Years:', container=traj.settings.f)
+	e$years <- gedit('2013, 2048, 2098', width=10, container=traj.settings.f)
+	enabled(e$years) <- FALSE
 	time.f <- gframe("<span color='blue'>Time range</span>", markup=TRUE, 
 									horizontal=TRUE, container=g)
 	glabel('From year:', container=time.f)
@@ -64,7 +70,7 @@ e0.show.trajectories.group <- function(g, main.win, parent.env) {
 	e$graph.pars <- create.graph.pars.widgets(graph.f, main.win=main.win)
 	addSpring(g)
 	button.g <- ggroup(horizontal=TRUE, container=g)
-	create.help.button(topic='e0.trajectories.plot', package='bayesLife', parent.group=button.g,
+	create.help.button(topic=c('e0.trajectories.plot', 'e0.joint.plot', 'e0.gap.plot'), package='bayesLife', parent.group=button.g,
 						parent.window=main.win)
 	addSpring(button.g)
 	
@@ -82,12 +88,32 @@ e0.show.trajectories.group <- function(g, main.win, parent.env) {
 
 get.additional.e0.param <- function(e, ...) {
 	sex <- svalue(e$sex)
-	param <- list(both.sexes= sex=='Both', joint.male= sex == 'Male')
+	param <- list(both.sexes= sex=='Both Marginal', joint.male= sex == 'Male')
 	return(list(add=param, plot=c('pi', 'xlim', 'nr.traj', 'both.sexes'), 
 					pred=c('joint.male'),
 					table=c('pi', 'country'), table.decimal=2))
 	}
 	
+
+assemble.e0.plot.cmd <- function(param, e, all=FALSE) {
+	plot.type <- svalue(e$sex)
+	all.suffix <- if(all) '.all' else ''
+	if(is.element(plot.type, c('Female', 'Male', 'Both Marginal'))) 
+		return(paste('e0.trajectories.plot',all.suffix, '(pred,',
+				paste(paste(names(param), param, sep='='), collapse=', '), ',',
+						svalue(e$graph.pars), ')', sep=''))
+	if(plot.type == 'Both Joint') {
+		parlist <- list(country=param$country, years=as.numeric(strsplit(svalue(e$years), ',')[[1]]), 
+						nr.points=param$nr.traj, pi=param$pi)
+		return(paste('e0.joint.plot',all.suffix, '(pred,', paste(paste(names(parlist), parlist, sep='='), collapse=', '), ',',
+						svalue(e$graph.pars), ')', sep=''))
+	}
+	# gap plot
+	parlist <- list(country=param$country, nr.traj=param$nr.traj, pi=param$pi, xlim=param$xlim)
+	return(paste('e0.gap.plot',all.suffix, '(pred,', paste(paste(names(parlist), parlist, sep='='), collapse=', '), ',',
+						svalue(e$graph.pars), ')', sep=''))
+}
+
 show.e0.traj <- function(h, ...) {
 	e <- h$action$env
 	pred.type <- if(is.null(h$action$pred.type)) 'e0' else h$action$pred.type
@@ -134,9 +160,7 @@ show.e0.traj <- function(h, ...) {
 		param.plot1c <- param.env[add.param.names[['plot']][is.element(add.param.names[['plot']], names(param.env))]]
 		if(is.element('country', names(param.env))) param.plot1c <- c(param.plot1c, param.env['country'])
 		if(!is.null(param.env$country)) { # one country
-			cmd <- paste(cmd, paste(pred.type, '.trajectories.plot(pred,', sep=''),
-						paste(paste(names(param.plot1c), param.plot1c, sep='='), collapse=', '), ',',
-						pars.value, ')')
+			cmd <- paste(cmd, do.call(paste('assemble.', pred.type, '.plot.cmd', sep=''), list(param.plot1c, e)), sep='')
 			if (h$action$script) {
 				script.text <- gwindow(paste(package,'commands'), parent=h$action$mw)
 				gtext(cmd, container=script.text)
