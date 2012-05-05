@@ -230,7 +230,8 @@ joint.male.prediction <- function(h, ...)
 		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
 		cmd <- paste('pred <- get.e0.prediction(sim.dir=', params$sim.dir, 
 						')\n', sep='')
-		cmd <- paste(cmd, 'e0.jmale.predict(', paste(paste(names(params), params, sep='='), collapse=', '),
+		params$sim.dir <- NULL
+		cmd <- paste(cmd, 'e0.jmale.predict(pred,', paste(paste(names(params), params, sep='='), collapse=', '),
 											 ')',sep=' ')
 		gtext(cmd, container=script.text)
 	} else {

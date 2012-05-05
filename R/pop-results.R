@@ -109,6 +109,12 @@ get.additional.pop.param <- function(e, script, type, ...) {
 					 table.decimal=0))
 }
 
+assemble.pop.plot.cmd <- function(param, e) {
+	return(paste('pop.trajectories.plot(pred,',
+				paste(paste(names(param), param, sep='='), collapse=', '), ',',
+						svalue(e$graph.pars), ')'))
+}
+
 get.pop.table.title <- function(country, pred) 
 	return (country)
 

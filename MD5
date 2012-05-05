@@ -1,5 +1,5 @@
-542007070a82c3efd6e8fbd01313a28f *ChangeLog
-e565ca1afc0eb89ba5465b0bc06eb717 *DESCRIPTION
+e364a3f2fe1fffc61b805e96efa149ad *ChangeLog
+fffc1542e03fcd9974997fbdcea501ba *DESCRIPTION
 416b20f702ca6dcd27b0f1a9660e2f43 *NAMESPACE
 8d287c1e05246dd642102d87ce0ab269 *R/LifePred.R
 51b2e4c3bd3097b0bd8a244f6b88fd4c *R/PopPred.R
@@ -8,11 +8,11 @@ e565ca1afc0eb89ba5465b0bc06eb717 *DESCRIPTION
 145e91b73356401b721e38a6ce137dc5 *R/bayesDem_ini.R
 1150c6e1eb88137231218b653b39ec87 *R/e0-cont-mcmc.R
 d17c7d69cbe9b04f382edb2d3ecdee9c *R/e0-mcmc.R
-a9a7062ec0a9a81be11d03406e5ba475 *R/e0-predict.R
-cd46ea180dbb274798aad837bf859729 *R/e0-results.R
+080aaf7db6610d2235a89a497f7deaf0 *R/e0-predict.R
+27b2a07d81bac77e45a9cedfa33a499c *R/e0-results.R
 c37e0c52c4265f1346f42c0d4b2d7c09 *R/handlers_and_fncs.R
 05e706ef1bd6b7434f772667e670a13b *R/pop-predict.R
-1b4be482d4be5092974f8893839f954d *R/pop-results.R
+14bbe2ee0e566dbae8486a1aac548a24 *R/pop-results.R
 b14d69a646c70e78d7f42d4cefa378b6 *R/tfr-cont-mcmc.R
 835b4c47f845b4970f2b355734c99021 *R/tfr-mcmc.R
 0c6cf9fd9e3573ffabccbdf449de01e0 *R/tfr-predict.R
@@ -21,5 +21,5 @@ db5142a718da685c4ba09df4f13c17d8 *R/tfr-results.R
 72791760781f0805e2d260edbfbaa783 *inst/images/traffic_light/green.png
 9ae39b2cadb01e758109d5670f47528e *inst/images/traffic_light/red.png
 af5da08cdeec209128bc10e7804c696d *man/bayesDem-internal.Rd
-3fa5c3b22696e04bc9f2b74df457c534 *man/bayesDem-package.Rd
+c083c3dc73742d295bafe3107b54759c *man/bayesDem-package.Rd
 d524f1ec5af5e1dddee5e509560307d3 *man/bayesDem.go.Rd
