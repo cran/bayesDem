@@ -245,11 +245,12 @@ restore.bhm.medians <- function(h, ...) {
 	}
 }
 
-get.table.of.countries.from.prediction <- function(sim.dir, not.predicted=TRUE, sorted=TRUE, type='tfr') {
-	loc.data.pred <- get.table.of.countries.from.meta(sim.dir, prediction=TRUE, sorted=sorted, pred.type=type)
+get.table.of.countries.from.prediction <- function(sim.dir, not.predicted=TRUE, sorted=TRUE, 
+					type='tfr', env=NULL) {
+	loc.data.pred <- get.table.of.countries.from.meta(sim.dir, prediction=TRUE, sorted=sorted, pred.type=type, env=env)
 	if(is.null(loc.data.pred)) return(NULL)
 	if(!not.predicted) return(loc.data.pred)
-	loc.data.sim <- get.table.of.countries.from.meta(sim.dir, prediction=FALSE, sorted=sorted, pred.type=type)
+	loc.data.sim <- get.table.of.countries.from.meta(sim.dir, prediction=FALSE, sorted=sorted, pred.type=type, env=env)
 	if(is.null(loc.data.sim)) return(NULL)
 	mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(sim.dir=sim.dir))
 	if (bayesTFR:::get.nr.countries(mcmc.set$meta) <= bayesTFR:::get.nr.countries.est(mcmc.set$meta)) {
@@ -336,7 +337,7 @@ selectCountryMenuPred <- function(h, ...) {
 		sim.dir.used <- svalue(h$action$env$sim.dir)
 		country.table <- get.table.of.countries.from.prediction(sim.dir=sim.dir.used, 
 							not.predicted=h$action$not.predicted, sorted=h$action$sorted,
-							type=if(is.null(h$action$type)) 'tfr' else h$action$type)
+							type=if(is.null(h$action$type)) 'tfr' else h$action$type, env=h$action$env)
 		if (is.null(country.table)) return(NULL)
 		h$action$env$sim.dir.used <- sim.dir.used
 		h$action$env$extra.country.table <- country.table

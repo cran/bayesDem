@@ -136,9 +136,13 @@ show.e0.traj <- function(h, ...) {
 	add.param.names <- do.call(paste('get.additional.',pred.type, '.param', sep=''), 
 									list(e, script=h$action$script, type=show.type))
 	param.env <- c(param.env, add.param.names[['add']])
-	param.pred <- param.env[c('sim.dir', add.param.names[['pred']])]
-	
-	pred <- do.call(paste('get.', pred.type, '.prediction', sep=''), param.pred)
+	param.pred <- param.env[c('sim.dir', 
+					add.param.names[['pred']][is.element(add.param.names[['pred']], names(param.env))])]
+	#param.pred.ev <- param.pred
+	 # get it now unquoted (to avoid double quotes if script is TRUE)
+	param.pred.ev <- c(get.parameters(list(text='sim.dir'), env=e, quote=FALSE),
+						add.param.names[['pred.unquote']])
+	pred <- do.call(paste('get.', pred.type, '.prediction', sep=''), param.pred.ev)
 	if(h$action$script) {
 		cmd <- paste('pred <- get.', pred.type, '.prediction(', 
 					paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
@@ -170,8 +174,10 @@ show.e0.traj <- function(h, ...) {
 			}
 		} else { # all countries
 			param.plot.allc <- param.env[c(names(param.plot1c), 'output.dir', 'output.type',  'verbose')]
-			cmd <- paste(cmd, paste(pred.type, '.trajectories.plot.all(pred, ', sep=''), 
-						paste(paste(names(param.plot.allc), param.plot.allc, sep='='), collapse=', '), sep='')
+			cmd <- paste(cmd, paste(pred.type, '.trajectories.plot', 
+						if(pred.type=='pop') 'All' else '.all',
+						'(pred, ', sep=''), 
+					paste(paste(names(param.plot.allc), param.plot.allc, sep='='), collapse=', '), sep='')
 			if(!is.null(pars.value)) {
 				if(nchar(pars.value)>0)
 					cmd <- paste(cmd, ',', pars.value)
