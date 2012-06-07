@@ -4,9 +4,13 @@ popResults.group <- function(g, main.win, parent) {
 	e$sim.dir <- parent$sim.dir
 	
 	graph.defaults <- formals(png)
-
-	nb <- gnotebook(container=g, expand=TRUE)
 	
+	gg <-  ggroup(horizontal=FALSE, container=g, expand=TRUE)
+	aggr.g <- ggroup(horizontal=TRUE, container=gg)
+	addSpring(aggr.g)
+	glabel('Aggregation method:', container=aggr.g)
+	e$aggregation.dl <- gdroplist(c('None', 'independence', 'regional'), container=aggr.g)
+	nb <- gnotebook(container=gg, expand=TRUE)
 	traj.g <- ggroup(label="<span color='#0B6138'>Population trajectories</span>", 
 							markup=TRUE, horizontal=FALSE, container=nb)
 	traj.env <- pop.show.trajectories.group(traj.g, main.win, e)
@@ -24,9 +28,12 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 	e <- new.env()
 	e$sim.dir <- parent.env$sim.dir
 	e$pred.type <- 'pop'
+	e$prior.select.countries.function <- 'add.aggregation.to.env'
+	e$aggregation.dl <- parent.env$aggregation.dl
+	e$new.country.select.if.changed <- c('aggregation.dl')
 	defaults.pred <- formals(pop.predict)
 	defaults.traj <- formals(pop.trajectories.plot)
-	defaults.traj.all <- formals(pop.trajectories.plot.all)
+	defaults.traj.all <- formals(pop.trajectories.plotAll)
 		
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
 									horizontal=FALSE, container=g)
@@ -97,15 +104,26 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 
 }
 
+add.aggregation.to.env <- function(e, ...) {
+	aggr <- svalue(e$aggregation.dl)	
+	if(aggr != 'None') e$aggregation <- aggr
+	else e$aggregation <- NULL
+}
+
 get.additional.pop.param <- function(e, script, type, ...) {
 	if (e$age==0) e$age<- 'all'
-	param.names <- list(text=c('sex'),logical=c('sum.over.ages', 'half.child.variant'))
+	param.names <- list(text=c('sex'), logical=c('sum.over.ages', 'half.child.variant'))
 	quote <- if(type=='table') script else TRUE
+	add.aggregation.to.env(e)
 	param <- c(get.parameters(param.names, env=e, quote=quote), 
-			get.parameters(list(numtext='age'), env=e, quote=quote, retrieve.from.widgets=FALSE))
+			get.parameters(list(numtext='age', text='aggregation'), 
+					env=e, quote=quote, retrieve.from.widgets=FALSE))
+
 	return(list(add=param, plot=c('pi', 'xlim', 'nr.traj', 'sex', 'age', 'sum.over.ages', 'half.child.variant'), 
 					 table=c('pi', 'country', 'sex', 'age', 'half.child.variant'),
-					 pred=c(),
+					 pred=c('aggregation'),
+					 pred.unquote=get.parameters(list(text='aggregation'), 
+					 				env=e, quote=FALSE, retrieve.from.widgets=FALSE),
 					 table.decimal=0))
 }
 
@@ -122,10 +140,13 @@ pop.show.pyramid.group <- function(g, main.win, parent.env) {
 	e <- new.env()
 	e$sim.dir <- parent.env$sim.dir
 	e$pred.type <- 'pop'
+	e$prior.select.countries.function <- 'add.aggregation.to.env'
+	e$new.country.select.if.changed <- c('aggregation.dl')
+	e$aggregation.dl <- parent.env$aggregation.dl
 	defaults.pred <- formals(pop.predict)
-	defaults.pyr <- formals(pop.pyramid)
-	defaults.pyr.all <- formals(pop.pyramid.all)
-	defaults.traj.pyr <- formals(pop.trajectories.pyramid)
+	defaults.pyr <- formals(bayesPop:::pop.pyramid.bayesPop.prediction)
+	defaults.pyr.all <- formals(pop.pyramidAll)
+	defaults.traj.pyr <- formals(bayesPop:::pop.trajectories.pyramid.bayesPop.prediction)
 		
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
 									horizontal=FALSE, container=g)
@@ -139,17 +160,31 @@ pop.show.pyramid.group <- function(g, main.win, parent.env) {
 						handler=function(h,...) enabled(e$nr.traj) <- svalue(h$obj))
 	addSpace(type.g1, 10)
 	e$proportion <- gcheckbox("Show x-axis as proportion", container=type.g1, checked=defaults.pyr$proportion)
+	addSpace(type.g1, 10)
+	glabel('Highest age category:', container=type.g1)
+	e$age <- gedit(defaults.pyr$age[length(defaults.pyr$age)], width=3, container=type.g1)
 	
 	type.g2 <- ggroup(horizontal=TRUE, container=type.settings.f)
 	year.gb <- gbutton(" Years ", container=type.g2,
 				handler=selectYearsMenuPop,
-				action=list(mw=main.win, env=e, multiple=TRUE))
+				action=list(mw=main.win, env=e, widget='year', multiple=TRUE))
 	glabel(":", container=type.g2)
 	#e$year <- glabel(paste(defaults.pred$present.year, "        "), container=type.settings.f)
 	e$year <- gedit(defaults.pred$present.year, width=10, container=type.g2)	
 	addSpace(type.g2, 10)
-	glabel('Highest age category:', container=type.g2)
-	e$age <- gedit(defaults.pyr$age[length(defaults.pyr$age)], width=3, container=type.g2)
+	#glabel("Comparison year:", container=type.g2)
+	#past.year.gb <- gdroplist(c('None', 'present', seq(from=2003, to=1948, by=-5)), container=type.g2,
+	#					handler=function(h,...){
+	#						val <- svalue(h$obj)
+	#						h$action$env$draw.past.year <- if(val=='None') FALSE else {if(val=='present') TRUE else val}
+	#					}, action=list(env=e))
+	year.comp.gb <- gbutton(" Additional Years ", container=type.g2,
+				handler=selectYearsMenuPop,
+				action=list(mw=main.win, env=e, widget='year.comp', multiple=TRUE))
+	glabel(":", container=type.g2)
+	e$year.comp <- gedit('', width=10, container=type.g2)
+	#e$draw.past.year <- FALSE
+
 
 	#type.g2 <- ggroup(horizontal=TRUE, container=type.settings.f)
 	#e$proportion <- gcheckbox("Show as proportion", container=type.g2, checked=TRUE)
@@ -185,22 +220,25 @@ show.pop.pyramid <- function(h, ...) {
 							force.country.spec=FALSE)
 	if(is.null(country.pars)) return(NULL)
 	traj.pyramid <- svalue(e$is.traj.pyr)
-	param.names.all <- list(text='sim.dir', numvector=c('pi', 'year'), 
-							numeric='age', logical='proportion')
+	param.names.all <- list(text='sim.dir', numvector=c('pi', 'year', 'year.comp'), 
+							numeric='age', logical=c('proportion'))
 	if(traj.pyramid) param.names.all$numeric <- c(param.names.all$numeric, 'nr.traj')
-
+	add.aggregation.to.env(e)
 	param.env <- get.parameters(param.names.all, env=e, quote=h$action$script)
 	param.env.rest <- list(country=country.pars$code, output.dir=country.pars$output.dir,
-							output.type=country.pars$output.type, verbose=TRUE)
-	param.env <- c(param.env, 
-					get.parameters(list(text=c('output.dir', 'output.type'), 
+							output.type=country.pars$output.type, verbose=TRUE, aggregation=e$aggregation)
+	param.env <- c(param.env, get.parameters(list(text=c('output.dir', 'output.type', 'aggregation'), 
 										logical='verbose', numeric='country'), 
 									param.env.rest, quote=TRUE,
 									retrieve.from.widgets=FALSE))
-	param.env$age <- 1:param.env$age
+	param.env$age <- if(!is.null(param.env$age)) 1:param.env$age else NULL
 	param.pred <- param.env['sim.dir']
-	
-	pred <- do.call('get.pop.prediction', param.pred)
+	if(is.element('aggregation', names(param.env))) param.pred <- c(param.pred, param.env['aggregation'])
+	#param.pred.ev <- param.pred
+	# get it now unquoted (to avoid double quotes if script is TRUE)
+	param.pred.ev <- c(get.parameters(list(text=c('sim.dir')), env=e, quote=FALSE),
+			get.parameters(list(text=c('aggregation')), env=e, quote=FALSE, retrieve.from.widgets=FALSE))		 
+	pred <- do.call('get.pop.prediction', param.pred.ev)
 	if(h$action$script) {
 		cmd <- paste('pred <- get.pop.prediction(', 
 					paste(paste(names(param.pred), param.pred, sep='='), collapse=', '), 
@@ -215,14 +253,15 @@ show.pop.pyramid <- function(h, ...) {
 	} else {
 		pyr.command <- 'pop.pyramid'
 	}
-		
+	comp.years <- if(is.null(param.env$year.comp)) c() else param.env$year.comp
 	if(is.element('country', names(param.env))) param.plot1c <- c(param.plot1c, param.env['country'])
+
 	if(!is.null(param.env$country)) { # one country
 		years <- param.env$year
 		if (h$action$script) {
 			script.text <- gwindow('bayesPop commands', parent=h$action$mw)
 			for(year in years) {
-				param.plot1c$year <- year
+				param.plot1c$year <- c(year, comp.years)
 				cmd <- paste(cmd, pyr.command, '(pred,', 
 					paste(paste(names(param.plot1c), param.plot1c, sep='='), collapse=', '), ',)\n')
 			}
@@ -230,17 +269,20 @@ show.pop.pyramid <- function(h, ...) {
 		} else {
 			base.cmd <- cmd
 			for(year in years) {
-				param.plot1c$year <- year
+				param.plot1c$year <- c(year, comp.years)
 				cmd <- paste(base.cmd, pyr.command, '(pred,', 
 					paste(paste(names(param.plot1c), param.plot1c, sep='='), collapse=', '), ',)\n')
 				create.graphics.window(parent=h$action$mw, title=paste("Pyramid for", country.pars$name), 
-										ps=8, width=700, height=500)
+										ps=9, width=700, height=500)
 				eval(parse(text=cmd))
 			}
 		}
 	} else { # all countries
+		years <- lapply(param.env$year, append, comp.years)
+		year.str <- paste('year=list(',paste(years, collapse=', '), '), ', sep='')
+		param.plot1c$year <- NULL
 		param.plot.allc <- param.env[c(names(param.plot1c), 'output.dir', 'output.type',  'verbose')]
-		cmd <- paste(cmd, pyr.command, '.all(pred, ',
+		cmd <- paste(cmd, pyr.command, 'All(pred, ', year.str, 
 					paste(paste(names(param.plot.allc), param.plot.allc, sep='='), collapse=', '), sep='')
 		cmd <- paste(cmd, ')', sep='')
 		if (h$action$script) {
@@ -286,13 +328,17 @@ selectAgeMenuPop <- function(h, ...) {
 
 }
 selectYearsMenuPop <- function(h, ...) {
+	w <- h$action$widget
 	year.selected <- function(h1, ...) {
-		years <- svalue(h$action$env$year.gt)
-		svalue(h$action$env$year) <- paste(years, collapse=',')
-		visible(h$action$env$year.sel.win) <- FALSE
+		years <- svalue(h$action$env$year.gt[[w]])
+		svalue(h$action$env[[w]]) <- paste(years, collapse=',')
+		visible(h$action$env$year.sel.win[[w]]) <- FALSE
 	}
-	if (!is.null(h$action$env$year.sel.win)) 
-		visible(h$action$env$year.sel.win) <- TRUE
+	if (is.null(h$action$env$year.sel.win)) h$action$env$year.sel.win <- list()
+	if (is.null(h$action$env$year.gt)) h$action$env$year.gt <- list()
+	if (is.null(h$action$env$year.ok.handler)) h$action$env$year.ok.handler <- list()
+	if (!is.null(h$action$env$year.sel.win[[w]])) 
+		visible(h$action$env$year.sel.win[[w]]) <- TRUE
 	else {
 		if(!has.required.arguments(list(sim.dir='Simulation directory'), env=h$action$env)) return()
 		param <-list(sim.dir=svalue(h$action$env$sim.dir))
@@ -302,27 +348,27 @@ selectYearsMenuPop <- function(h, ...) {
 						title='Input Error', icon='error')
         	return(NULL)
 		}
-		h$action$env$year.table <- data.frame(Mid.year=pred$proj.years)
-		h$action$env$year.sel.win <- win <- gwindow('Select years', 
+		h$action$env$year.table <- data.frame(Mid.year=c(as.integer(colnames(pred$inputs$pop.matrix[['male']])), pred$proj.years[-1]))
+		h$action$env$year.sel.win[[w]] <- win <- gwindow('Select years', 
 							parent=h$action$mw, height=450, width=100,
-							handler=function(h, ...) {
-								h$action$env$year.sel.win<-NULL;
-								h$action$env$year.ok.handler <- NULL
+							handler=function(h1, ...) {
+								h$action$env$year.sel.win[[w]]<-NULL;
+								h$action$env$year.ok.handler[[w]] <- NULL
 							},
 							action=list(env=h$action$env))
 		t.group <- ggroup(horizontal=FALSE, container=win)
-		h$action$env$year.gt <- gtable(h$action$env$year.table, container=t.group, 
+		h$action$env$year.gt[[w]] <- gtable(h$action$env$year.table, container=t.group, 
 					expand=TRUE, multiple=h$action$multiple, handler=year.selected)
 		b.group <- ggroup(horizontal=TRUE, container=t.group)
 		gbutton('Cancel', container=b.group, handler=function(h, ...) 
 					visible(win) <- FALSE)
 		addSpring(b.group)
-		h$action$env$year.okbutton <- gbutton('OK', container=b.group)
+		if (is.null(h$action$env$year.okbutton)) h$action$env$year.okbutton <- list()
+		h$action$env$year.okbutton[[w]] <- gbutton('OK', container=b.group)
 	}
-	if(!is.null(h$action$env$year.ok.handler)) 
-		removehandler(h$action$env$year.okbutton, h$action$env$year.ok.handler)
-	h$action$env$year.ok.handler <- addhandlerclicked(
-						h$action$env$year.okbutton, handler=year.selected)
-
+	if(!is.null(h$action$env$year.ok.handler[[w]])) 
+		removehandler(h$action$env$year.okbutton[[w]], h$action$env$year.ok.handler[[w]])
+	h$action$env$year.ok.handler[[w]] <- addhandlerclicked(
+						h$action$env$year.okbutton[[w]], handler=year.selected)
 
 }

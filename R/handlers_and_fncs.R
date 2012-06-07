@@ -122,7 +122,8 @@ show.summary <- function(h, ...) {
 	}
 	if (is.null(pred)) {
 		cat('\nNo projections available in this directory.\n')	} else {	
-		cat('\nProjections for end year:', pred$end.year)
+		cat('\nProjections')
+		if(!is.null(pred$end.year)) cat(' for end year:', pred$end.year) else cat(':')
 		cat('\n------------------')
 		print(summary(pred))
 	}

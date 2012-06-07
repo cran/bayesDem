@@ -313,9 +313,17 @@ create.graph.pars.widgets <- function (parent, main.win=NULL) {
 	return(pars.w)
 }
 
-get.table.of.countries.from.meta <- function(sim.dir, prediction=FALSE, sorted=TRUE, pred.type='tfr') {
+get.table.of.countries.from.meta <- function(sim.dir, prediction=FALSE, sorted=TRUE, 
+										pred.type='tfr', env=NULL) {
+	if(!is.null(env$prior.select.countries.function)) # function to run prior the selection. Can be used to set something to the env.
+		do.call(env$prior.select.countries.function, list(env))
 	if(prediction) {
-		pred <- do.call(paste('get.', pred.type, '.prediction', sep=''), list(sim.dir=sim.dir))
+		pred.call <- paste('get.', pred.type, '.prediction', sep='')
+		args <- formals(pred.call)
+		args$sim.dir <- NULL
+		lenv <- as.list(env)
+		add.args <- lenv[names(args)[!sapply(lenv[names(args)], is.null)]]
+		pred <- do.call(pred.call, c(list(sim.dir=sim.dir), add.args))
 		if(is.null(pred)) {
 			gmessage('Simulation directory contains no valid predictions.', 
 					title='Input Error', icon='error')
@@ -336,7 +344,18 @@ get.table.of.countries.from.meta <- function(sim.dir, prediction=FALSE, sorted=T
 	}
 	return(loc.data)
 }
+
+draw.new.country.select <- function(used, env) {
+	for(item in c('sim.dir', env$new.country.select.if.changed))
+		if (svalue(env[[item]]) != used[[item]]) return (TRUE)
+	return(FALSE)
+}
 	
+set.used.items <- function(env.used, env) {
+	for(item in c('sim.dir', env$new.country.select.if.changed))
+		env.used[[item]] <- svalue(env[[item]])
+}
+
 selectCountryMenu <- function(h, ...) {
 	country.selected <- function(h1, ...) {
 		selected.country <- as.numeric(svalue(h$action$env$selcountry.gt))
@@ -350,14 +369,19 @@ selectCountryMenu <- function(h, ...) {
 	new.window <- TRUE
 	if (!is.null(h$action$env$country.sel.win)) {
 		# if anything has changed (sim.dir or the data), the window needs to be re-built
-		if (svalue(h$action$env$parent.env$sim.dir) != h$action$env$sim.dir.used) {
+		if(draw.new.country.select(h$action$env$used, h$action$env$parent.env)) {
 			dispose(h$action$env$country.sel.win)
 			new.window <- TRUE
 		} else {
 			country.table <- get.table.of.countries.from.meta(svalue(h$action$env$parent.env$sim.dir), 
 								prediction=h$action$env$prediction, 
 								pred.type=if(is.null(h$action$env$parent.env$pred.type)) 'tfr' 
-											else h$action$env$parent.env$pred.type)
+											else h$action$env$parent.env$pred.type, 
+								env=h$action$env$parent.env)
+			if(is.null(country.table)) {
+				dispose(h$action$env$country.sel.win)
+				return(NULL)
+			}
 			if(dim(country.table)[1] != dim(h$action$env$country.table)[1]) {
 				dispose(h$action$env$country.sel.win)
 				new.window <- TRUE
@@ -371,9 +395,11 @@ selectCountryMenu <- function(h, ...) {
 		sim.dir.used <- svalue(h$action$env$parent.env$sim.dir)
 		country.table <- get.table.of.countries.from.meta(sim.dir.used, prediction=h$action$env$prediction,
 										pred.type=if(is.null(h$action$env$parent.env$pred.type)) 'tfr' 
-											else h$action$env$parent.env$pred.type)
+											else h$action$env$parent.env$pred.type, 
+										env=h$action$env$parent.env)
 		if (is.null(country.table)) return(NULL)
-		h$action$env$sim.dir.used <- sim.dir.used
+		h$action$env$used <- new.env()
+		set.used.items(h$action$env$used, h$action$env$parent.env)
 		h$action$env$country.table <- country.table
 		h$action$env$country.sel.win <- win <- gwindow('Select country', parent=h$action$mw, height=450,
 					handler=function(h, ...) {
