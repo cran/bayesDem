@@ -6,18 +6,22 @@ bayesDem.go <- function(wpp.year.tfr=tfr.wpp.year.default, wpp.year.e0=e0.wpp.ye
 	}
 	options(guiToolkit=guiToolkit.default)
 	# 
+	path = system.file("images",package="bayesDem")
 	wait.window <- gwindow('Bayesian Demographer Initialization', width=400, height=100,
-						parent=c(500, 300))
-	glabel('Starting Bayesian Demographer ...', container=wait.window)
+						parent=c(500, 300), visible=FALSE)
+	set.widget.bgcolor(wait.window, "white")
+	#glabel('Starting Bayesian Demographer ...', container=wait.window)
+	gimage(file.path(path, 'startpyramid.png'), , container=wait.window)
+
+	visible(wait.window) <- TRUE
 	
 	# main window
 	main.win <<- gwindow(paste('Bayesian Demographer  v.', 
-			packageVersion("bayesDem")), visible=FALSE, parent=c(400,150))
-
+			packageVersion("bayesDem")), visible=FALSE, parent=c(400,50))
 	main.g <- ggroup(horizontal=FALSE, container=main.win)
 	
 	# notebook with tabs
-	main.notebook <- gnotebook(container=main.g, expand=TRUE)
+	main.notebook <- bDem.gnotebook(container=main.g, expand=TRUE)
 
 	# TFR prediction tab
 	tfr.pred <- ggroup(label="<span weight='bold' color='blue'>Projection of Total Fertility Rate</span>", 
@@ -43,6 +47,9 @@ bayesDem.go <- function(wpp.year.tfr=tfr.wpp.year.default, wpp.year.e0=e0.wpp.ye
 	addSpring(button.group)
 	label <- glabel('BayesPop group\nUniversity of Washington', container=button.group)
 	font(label) <- c(style='normal', family='serif', size='xx-small')
+	#addHandlerRightclick(main.win, handler=function(h, ...) focus(h$obj) <- TRUE)
+	addHandlerFocus(main.win, handler=function(h, ...) focus(h$obj) <- TRUE)
+	#addHandlerDragMotion(main.win, handler=function(h, ...) focus(h$obj) <- TRUE)
 	dispose(wait.window)
 	visible(main.win) <- TRUE
 

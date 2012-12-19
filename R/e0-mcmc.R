@@ -1,83 +1,46 @@
 e0RunMCMCgroup <- function(g, main.win, parent) {
 	# parent needed for wpp set in the parent function
 	e <- new.env()
-	nb <- gnotebook(container=g, expand=TRUE)
+	nb <- bDem.gnotebook(container=g, expand=TRUE)
 	all.c.g <- ggroup(label="<span color='#0B6138'>All Countries</span>", markup=TRUE, 
 						horizontal=FALSE, container=nb)
-	all.c.env <- e0mcmc.all.countries.group(all.c.g, main.win, parent)
+	e0mcmc.all.countries.group(all.c.g, main.win, parent)
 	extra.c.g <- ggroup(label="<span color='#0B6138'>Extra Areas &amp; Regions</span>", 
 						markup=TRUE, horizontal=FALSE, container=nb)
-	extra.c.env <- e0mcmc.extra.countries.group(extra.c.g, main.win, parent)
+	e0mcmc.extra.countries.group(extra.c.g, main.win, parent)
 	svalue(nb) <- 1
 }
 
 e0mcmc.all.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
 	defaults <- formals(run.e0.mcmc) # default argument values
-
-	out.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, container=g)
-	e$output.dir <- parent$sim.dir				
-	
-	out.g2 <- ggroup(horizontal=TRUE, container=out.g)
-	e$replace.output <- gcheckbox("Overwrite existing results in simulation directory", 
-									checked=defaults$replace.output, container=out.g2)
-	addSpace(out.g2, 20)
-	glabel("Buffer size:", container=out.g2)
-	e$buffer.size <- gedit(defaults$buffer.size, width=4, container=out.g2)
-
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, container=g)
-	auto.g <- ggroup(horizontal=TRUE, container=mcmc.g)
-	e$run.prediction <- FALSE
-	e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', container=auto.g,
-							handler=function(h,...){.enable.auto.run(svalue(h$obj), e)})
-	e$auto.conf.b <- gbutton(' Configure auto run ', container=auto.g, handler=configure.auto.run, 
-				action=list(mw=main.win, env=e, cont.run=FALSE, type='e0'))
-	iter.g1 <- ggroup(horizontal=TRUE, container=mcmc.g)
-	glabel("Number of chains:", container=iter.g1)
-	e$nr.chains <- gedit(defaults$nr.chains, width=2, container=iter.g1)
-	glabel("Number of iterations:", container=iter.g1)
-	e$iter <- gedit(defaults$iter, width=7, container=iter.g1)
-	glabel("Thin:", container=iter.g1)
-	e$thin <- gedit(defaults$thin, width=2, container=iter.g1)
-	.enable.auto.run(defaults$iter=='auto', e)
-	glabel("RNG seed:", container=iter.g1)
-	e$seed <- gedit(defaults$seed, width=4, container=iter.g1)
-		
-	time.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, container=g)
-	time.g1 <- ggroup(horizontal=TRUE, container=time.g)
-	glabel("Sex:", container=time.g1)
-	e$sex <- gdroplist(c('Female', 'Male'), container=time.g1, selected=1)
-	addSpace(time.g1, 10)
-	glabel("Start year:", container=time.g1)
-	e$start.year <- gedit(defaults$start.year, width=4, container=time.g1)
-	glabel("     Present year:", container=time.g1)
-	e$present.year <- gedit(defaults$present.year, width=4, container=time.g1)
-	glabel("     WPP year:", container=time.g1)
-	glabel(parent$wpp.year, container=time.g1)
-	
-	time.g2 <- ggroup(horizontal=TRUE, container=time.g)
-	glabel("User-defined e0 file:", container=time.g2)
-	e$my.e0.file <- gfilebrowse(eval(defaults$my.e0.file), type='open', 
-					  width=40, quote=FALSE, container=time.g2)
-	
-	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=paral.g)
-	addSpace(paral.g, 10)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=paral.g)
-	glabel("  Number of nodes:", container=paral.g)
-	e$nr.nodes <- gedit(svalue(e$nr.chains), width=2, container=paral.g)
-
+	e$output.dir <- parent$sim.dir
+	addSpace(g, 10)
+	time.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, container=g, expand=FALSE)
+	timelo <- glayout(container=time.g)
+	timelo[1,1, anchor=c(-1,0)] <- glabel("Sex:", container=timelo)
+	timelo[1,2] <- e$sex <- bDem.gdroplist(c('Female', 'Male'), container=timelo, selected=1)
+	timelo[1,3, anchor=c(-1,0)] <- glabel("Start year:", container=timelo)
+	timelo[1,4] <- e$start.year <- gedit(defaults$start.year, width=4, container=timelo)
+	timelo[1,5, anchor=c(-1,0)] <- glabel("Present year:", container=timelo)
+	timelo[1,6] <- e$present.year <- gedit(defaults$present.year, width=4, container=timelo)
+	timelo[1,7, anchor=c(-1,0)] <- glabel("WPP year:", container=timelo)
+	timelo[1,8, anchor=c(-1,0)] <- glabel(parent$wpp.year, container=timelo)
+	timelo[2,1:2, anchor=c(-1,0)] <- glabel("User-defined e0 file:", container=timelo)
+	timelo[2,3:8] <- e$my.e0.file <- bDem.gfilebrowse(eval(defaults$my.e0.file), type='open', 
+					  width=30, quote=FALSE, container=timelo)
+	addSpace(g, 10)
+	.create.mcmc.process.group(g, e, main.win, defaults, type='e0', advance.settigs.function=e0mcmc.advance.settings)
+	addSpace(g, 10)
+	.create.status.label(g, e)
 	addSpring(g)
 	adv.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic=c('run.e0.mcmc', 'bayesLife-package'), package='bayesLife', parent.group=adv.g,
 						parent.window=main.win)
-	gbutton('  Advanced Settings  ', container=adv.g, handler=e0mcmc.advance.settings, 
-				action=list(mw=main.win, env=e))
-				
 	addSpring(adv.g)
-	gbutton(' Generate Script ', container=adv.g, handler=e0mcmc.run,
-						action=list(mw=main.win, env=e, script=TRUE, wpp.year=parent$wpp.year))
-	gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=e0mcmc.run, 
+	create.generate.script.button(handler=e0mcmc.run, action=list(mw=main.win, env=e, script=TRUE, wpp.year=parent$wpp.year),
+								container=adv.g)
+	bDem.gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=e0mcmc.run, 
 				action=list(mw=main.win, env=e, script=FALSE, wpp.year=parent$wpp.year, parent.group=g)), 
 				container=adv.g)
 	#e$statusbar <- gstatusbar() # don't display now
@@ -88,42 +51,20 @@ e0mcmc.extra.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
 	defaults <- formals(run.e0.mcmc.extra) # default argument values
 	e$sim.dir <- parent$sim.dir
-	
-	e$ts.g <- gframe("<span color='blue'>e0 time series</span>", markup=TRUE, horizontal=FALSE, container=g)
-	e$ts.g1 <- ggroup(horizontal=TRUE, container=e$ts.g)
-	gbutton("  Select countries/regions from the UN e0-file  ", container=e$ts.g1,
-				handler=multiSelectCountryMenu,
-				action=list(mw=main.win, env=e, type='e0'))
-	
-	e$ts.g2 <- ggroup(horizontal=TRUE, container=e$ts.g)
-	glabel("User-defined e0-file:", container=e$ts.g2)
-	e$my.e0.file <- gfilebrowse(eval(defaults$my.e0.file), type='open', 
-					  width=40, quote=FALSE, container=e$ts.g2)
-					  
-	e$iter.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=TRUE, container=g)
-	glabel("Number of iterations:", container=e$iter.g)
-	e$iter <- gedit(defaults$iter, width=7, container=e$iter.g)
-	glabel("Thin:", container=e$iter.g)
-	e$thin <- gedit(defaults$thin, width=2, container=e$iter.g)
-	glabel("Burnin:", container=e$iter.g)
-	e$burnin <- gedit(defaults$burnin, width=4, container=e$iter.g)
-					  					  
-	e$paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=e$paral.g)
-	addSpace(e$paral.g, 10)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=e$paral.g)
-	glabel("  Number of nodes:", container=e$paral.g)
-	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=e$paral.g)
-	
+	addSpace(g, 10)
+	.create.extra.TS.group(g, main.win, e, defaults, my.file.item='my.e0.file', type='e0', label.type='e0')
+	addSpace(g, 10)
+	.create.extra.mcmc.process(g, e, defaults)
+	addSpace(g, 10)
+	.create.status.label(g, e)
 	addSpring(g)
-	e$button.g <- ggroup(horizontal=TRUE, container=g)
-	create.help.button(topic='run.e0.mcmc.extra', package='bayesLife', parent.group=e$button.g,
+	button.g <- ggroup(horizontal=TRUE, container=g)
+	create.help.button(topic='run.e0.mcmc.extra', package='bayesLife', parent.group=button.g,
 						parent.window=main.win)	
-	addSpring(e$button.g)
-	gbutton(' Generate Script ', container=e$button.g, handler=e0mcmc.run.extra,
-						action=list(mw=main.win, env=e, script=TRUE))
-	gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=e0mcmc.run.extra, 
-				action=list(mw=main.win, env=e, script=FALSE)), container=e$button.g)
+	addSpring(button.g)
+	create.generate.script.button(handler=e0mcmc.run.extra, action=list(mw=main.win, env=e, script=TRUE), container=button.g)
+	bDem.gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=e0mcmc.run.extra, 
+				action=list(mw=main.win, env=e, script=FALSE)), container=button.g)
 
 	return(e)
 }
@@ -133,9 +74,8 @@ e0mcmc.run <- function(h, ...) {
 	if(!has.required.arguments(list(output.dir='Simulation directory'), env=e)) return()
 	param.names <- list(numeric=c('buffer.size', 'nr.nodes', 'iter', 'thin', 'nr.chains', 'start.year', 
 									'present.year', 'seed'),
-						text=c('output.dir', 'my.e0.file',
-								'sex'),
-						logical=c('replace.output', 'verbose', 'parallel'))
+						text=c('output.dir', 'my.e0.file', 'sex', 'compression.type'),
+						logical=c('verbose', 'parallel'))
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	params[['wpp.year']] <- h$action$wpp.year
 	run.auto <- svalue(e$run.auto)
@@ -146,24 +86,24 @@ e0mcmc.run <- function(h, ...) {
 		params[['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
 		options(op)
 	}
+	outdir <- get.parameters(list(text='output.dir'), e, quote=FALSE)$output.dir # to avoid double quoting if script is TRUE
+	if(file.exists(outdir) && (length(list.files(outdir)) > 0)) {
+		params[['replace.output']] <- FALSE
+		if (gconfirm(paste('Non-empty directory', outdir, 
+								'already exists.\nDo you want to overwrite existing results?'),
+				icon='question', parent=h$action$mw))
+			params[['replace.output']] <- TRUE
+		else return(NULL)
+	}
+
 	if (h$action$script) {
-		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-		commands <- paste('m <- run.e0.mcmc(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
-					paste(paste(names(e$params), e$params, sep='='), collapse=', '),
-											 ')',sep=' ')
+		commands <- paste('m <- run.e0.mcmc(', assemble.arguments(c(params, e$params)), ')',sep=' ')
 		if(run.auto && e$run.prediction) {
 			commands <- paste(commands, '\n\ne0.predict(m, use.diagnostics=TRUE)', sep='')
 			#commands <- paste(commands, '\n\ne0.predict(m)', sep='')
 			}
-		gtext(commands, container=script.text)
+		create.script.widget(commands, h$action$mw, package="bayesLife")
 	} else {
-		if(!params[['replace.output']] & file.exists(params[['output.dir']])) {
-			if(length(list.files(params[['output.dir']])) > 0) {
-				gmessage(paste('Non-empty directory', params[['output.dir']], 
-								'already exists.\nCheck "Overwrite existing results" to delete its content.'))
-				return()
-			}
-		}
 		run <- FALSE
 		if ((params[['iter']] == 'auto' && ((!is.null(params[['auto.conf']]) 
 				&& params[['auto.conf']]$iter > 5000) || is.null(params[['auto.conf']]))) 
@@ -173,14 +113,47 @@ e0mcmc.run <- function(h, ...) {
 					handler=function(h, ...) run <<- TRUE)
 		} else run <- TRUE
 		if(run) {
-			m <- do.call('run.e0.mcmc', c(params, e$params))
+			if(file.exists(params[['output.dir']])) unlink(params[['output.dir']], recursive=TRUE)
+			m <- .run.simulation(e, handler=get.e0.simulation.status, option='bDem.e0mcmc', 
+								call='run.e0.mcmc', params=c(params, e$params), 
+								sim.name='e0 MCMC simulation', main.win=h$action$mw,
+								action=list(sb=e$statuslabel, sim.dir=params[['output.dir']]),
+								interval=5000)
 			if(run.auto && e$run.prediction) {
-				e0.predict(m, use.diagnostics=TRUE)
-				#e0.predict(m)
+				.run.prediction(e, type='e0', handler=get.e0.prediction.status, option='bDem.e0pred', 
+								call='e0.predict', params=list(m, use.diagnostics=TRUE), 
+								sim.name='e0 prediction', main.win=h$action$mw,
+								action=list(sb=e$statuslabel),
+								interval=1000)
 			}
 		}
 	}
 }
+
+get.e0.simulation.status <- function(h, ...) {
+	sb <- h$action$sb
+	sim.dir <- h$action$sim.dir
+	warn <- getOption('warn')
+	options(warn=-1) # disable warning messages
+	mcmc.set <- get.e0.mcmc(sim.dir)
+	options(warn=warn)
+	if(is.null(mcmc.set)) return()
+	get.finished <- function(x) return(x$finished.iter)
+	get.iter <- function(x) return(x$iter)
+	finished <- sapply(mcmc.set$mcmc.list, get.finished)
+	total <- sapply(mcmc.set$mcmc.list, get.iter)
+	svalue(sb) <- paste('Running e0 simulation ... Iterations - ', 
+				 	paste('chain ', 1:length(finished), ': ', finished, ' (', total, ')', sep='', collapse=', '))
+	
+}
+
+get.e0.simulation.extra.status <- function(h, ...) {
+	sb <- h$action$sb
+	# We don't have any status info for the extra run, so just keep a static label
+	svalue(sb) <- 'Running e0 extra simulation ... '
+	
+}
+
 
 e0mcmc.run.extra <- function(h, ...) {
 	e <- h$action$env
@@ -191,12 +164,14 @@ e0mcmc.run.extra <- function(h, ...) {
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	params[['countries']] <- e$selected.extra.countries
 	if (h$action$script) {
-		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-		gtext(paste('run.e0.mcmc.extra(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
-											 ')',sep=' '), 
-					container=script.text)
+		cmd <- paste('run.e0.mcmc.extra(', assemble.arguments(params), ')', sep=' ')
+		create.script.widget(cmd, h$action$mw, package="bayesLife")
 	} else {
-		do.call('run.e0.mcmc.extra', params)
+		.run.simulation(e, handler=get.e0.simulation.extra.status, option='bDem.e0mcmcExtra', 
+								call='run.e0.mcmc.extra', params=params, 
+								action=list(sb=e$statuslabel),
+								sim.name='e0 MCMC extra simulation', main.win=h$action$mw,
+								interval=1000)
 	}
 }
 
@@ -360,7 +335,7 @@ e0mcmc.advance.settings <- function(h, ...) {
 		}
 		visible(h$action$env$adv.set.win) <- TRUE
 	} else { # create the Advanced Parameters window
-		h$action$env$adv.set.win <- adv.set.win <- gwindow('Settings for Bayesian Hierarchical Model of Life Expectancy',
+		h$action$env$adv.set.win <- adv.set.win <- bDem.gwindow('Settings for Bayesian Hierarchical Model of Life Expectancy',
 						parent=h$action$mw, visible=FALSE,
 						handler=function(h, ...) {
 							h$action$env$adv.set.okhandler <- NULL
@@ -604,11 +579,12 @@ e0mcmc.advance.settings <- function(h, ...) {
 	
 	# Buttons
 	button.g <- ggroup(container=e$adv.g, horizontal=TRUE)
-	gbutton('Cancel', container=button.g, handler=function(h, ...) 
+	bDem.gbutton('Cancel', container=button.g, handler=function(h, ...) 
 					visible(adv.set.win) <- FALSE)
 	addSpring(button.g)
-	e$adv.set.defaultbutton <- gbutton('  Set to Default Values  ', container=button.g, handler=set.defaults)
-	e$adv.set.okbutton <- gbutton('OK', container=button.g)
+	e$adv.set.defaultbutton <- bDem.gbutton(action=gaction('  Set to Default Values  ', icon='refresh', handler=set.defaults),
+										container=button.g)
+	e$adv.set.okbutton <- bDem.gbutton('OK', container=button.g)
 	
 	e$linked.pars.list <- linked.pars.list
 	e$linked.pars.tuple <- linked.pars.tuple

@@ -1,5 +1,5 @@
 e0NewPred.group <- function(g, main.win, parent) {
-	nb <- gnotebook(container=g, expand=TRUE)
+	nb <- bDem.gnotebook(container=g, expand=TRUE)
 	all.c.g <- ggroup(label="<span color='#0B6138'>All Countries</span>", markup=TRUE, 
 					horizontal=FALSE, expand=TRUE, container=nb)
 	pred.all <- e0.pred.all.countries.group(all.c.g, main.win, parent)
@@ -16,59 +16,23 @@ e0NewPred.group <- function(g, main.win, parent) {
 }
 
 e0.pred.all.countries.group <- function(g, main.win, parent) {
-	enable.pred.settings <- function(not.use.diag) {
-		enabled(e$burnin) <- not.use.diag
-		enabled(e$nr.traj) <- not.use.diag
-		enabled(e$thin) <- not.use.diag	
-	}
 	e <- new.env()
 	defaults <- formals(e0.predict) # default argument values
 	e$sim.dir <- parent$sim.dir
-	
-	pred.g <- gframe("<span color='blue'>Prediction</span>", markup=TRUE, horizontal=FALSE, container=g)
-	pred.g1 <- ggroup(horizontal=TRUE, container=pred.g)
-	glabel("End year:", container=pred.g1)
-	glabel("<span color='red'>*</span>", markup=TRUE, container=pred.g1)
-	e$end.year <- gedit(defaults$end.year, width=4, container=pred.g1)
-	e$use.diagnostics <- gcheckbox("Use diagnostics", checked = defaults$use.diagnostics, 
-									handler=function(h, ...) enable.pred.settings(!svalue(h$obj)), 
-									container=pred.g1)
-    enabled(e$use.diagnostics) <- FALSE
-	addSpace(pred.g1, 20)
-	glabel("RNG seed:", container=pred.g1)
-	e$seed <- gedit(defaults$seed, width=4, container=pred.g1)
-	addSpace(pred.g1, 10)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=pred.g1)
-
-	pred.g2 <- ggroup(horizontal=TRUE, container=pred.g)
-	glabel("Burnin:", container=pred.g2)
-	glabel("<span color='red'>*</span>", markup=TRUE, container=pred.g2)
-	e$burnin <- gedit(defaults$burnin, width=7, container=pred.g2)
-	glabel("Nr. of trajectories:", container=pred.g2)
-	e$nr.traj <- gedit(defaults$nr.traj, width=5, container=pred.g2)
-	glabel("OR  Thin:", container=pred.g2)
-	e$thin <- gedit(defaults$thin, width=5, container=pred.g2)
-	#enable.pred.settings(!defaults$use.diagnostics)
-	enable.pred.settings(TRUE)
-	
-	sim.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, container=g)
-	out.g1 <- ggroup(horizontal=TRUE, container=sim.g)
-	e$replace.output <- gcheckbox("Overwrite existing prediction in simulation directory", 
-									checked=defaults$replace.output, container=out.g1)
-	sim.g2 <- ggroup(horizontal=TRUE, container=sim.g)
-
-	glabel("Nr. of ascii trajectories:", container=sim.g2)
-	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=sim.g2)
-		
+	addSpace(g, 10)
+	lo <- .create.prediction.setting.group(g, e, defaults)
+	lo[1,6] <- e$predict.jmale <- gcheckbox("Predict joint male", checked=defaults$predict.jmale, container=lo)
+	addSpace(g, 10)
+	.create.status.label(g, e)
 	addSpring(g)
 	predict.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='e0.predict', package='bayesLife', 
 				parent.group=predict.g,
 						parent.window=main.win)
 	addSpring(predict.g)
-	gbutton(' Generate Script ', container=predict.g, handler=run.e0.prediction,
-				action=list(mw=main.win, env=e, script=TRUE))
-	gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.e0.prediction, 
+	create.generate.script.button(handler=run.e0.prediction, action=list(mw=main.win, env=e, script=TRUE),
+								container=predict.g)
+	bDem.gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.e0.prediction, 
 				action=list(mw=main.win, env=e, script=FALSE)), container=predict.g)
 	return(e)
 
@@ -81,60 +45,67 @@ run.e0.prediction <- function(h, ...)
 									end.year='End year', burnin='Burnin'), env=e)) return()
 	param.names <- list(numeric=c('end.year', 'burnin', 'seed', 'nr.traj', 'thin'), 
 						text=c('sim.dir'),
-						logical=c('verbose', 'replace.output'),
+						logical=c('verbose', 'use.diagnostics', 'predict.jmale'),
 						numtext=c('save.as.ascii') #can be both - numeric or text
 						)
 	params <- get.parameters(param.names, e, h$action$script)
+	if(params$use.diagnostics) {
+		params[['burnin']] <- NULL
+		params[['thin']] <- NULL
+		params[['nr.traj']] <- NULL
+	}
+
+	simdir <- get.parameters(list(text='sim.dir'), e, quote=FALSE)$sim.dir # to avoid double quoting if script is TRUE
+	if(has.e0.prediction(sim.dir=simdir)) {
+		params[['replace.output']] <- FALSE
+		if (gconfirm(paste('Prediction for', simdir, 
+								'already exists.\nDo you want to overwrite existing results?'),
+				icon='question', parent=h$action$mw))
+			params[['replace.output']] <- TRUE
+		else return(NULL)
+	}
+
 	if (h$action$script) {
-		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-		gtext(paste('e0.predict(', paste(paste(names(params), params, sep='='), collapse=', '),
-											 ')',sep=' '), 
-					container=script.text)
+		cmd <- paste('e0.predict(', paste(paste(names(params), params, sep='='), collapse=', '),
+											 ')', sep=' ')
+		create.script.widget(cmd, h$action$mw, package="bayesLife")
 	} else {
-		if(!params[['replace.output']] && has.e0.prediction(sim.dir=params[['sim.dir']])) {
-				gmessage(paste('Prediction for', params[['sim.dir']], 
-								'already exists.\nCheck "Overwrite existing prediction" to delete it.'))
+		if(params$use.diagnostics) {
+			mcmc.set <- get.e0.mcmc(params[['sim.dir']])
+			diag.list <- get.e0.convergence.all(mcmc.set$meta$output.dir)
+			if(length(diag.list) == 0) {
+				gmessage(paste('There is no diagnostics available for', params[['sim.dir']],
+							'. Use manual settings for Nr. of trajectories or Thin.'))
 				return()
+			}
 		}
-		do.call('e0.predict', params)
+		.run.prediction(e, type='e0', handler=get.e0.prediction.status, option='bDem.e0pred', 
+								call='e0.predict', params=params, 
+								sim.name='e0 prediction', main.win=h$action$mw,
+								action=list(sb=e$statuslabel),
+								interval=1000)
 	}
 }
 
+get.e0.prediction.status <- function(h, ...) 
+	.update.status(h$action$sb, 'bDem.e0pred.status', 'Running e0 prediction ...')
+
+
 e0.pred.extra.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
-	defaults <- formals(tfr.predict.extra) # default argument values
-		
-	e$countries.g <- gframe("<span color='blue'>Countries/Regions selection</span>", markup=TRUE, 
-							horizontal=FALSE, container=g)
-	e$countries.g1 <- ggroup(horizontal=TRUE, container=e$countries.g)
-	e$all.countries <- gcheckbox("All without prediction", checked=TRUE, container=e$countries.g1,
-									handler=function(h,...){
-										enabled(e$e.countries.gb) <- !svalue(h$obj)
-										})
-	addSpace(e$countries.g1, 20)
-	e$e.countries.gb <- gbutton("  Select specific countries/regions  ", container=e$countries.g1,
-				handler=selectCountryMenuPred,
-				action=list(mw=main.win, env=e, not.predicted=TRUE, multiple=TRUE, sorted=FALSE,
-							type='e0'))
-	enabled(e$e.countries.gb) <- !svalue(e$all.countries)
-	
-	e$sim.g <- gframe("<span color='blue'>Output</span>", markup=TRUE, horizontal=FALSE, container=g)
+	defaults <- formals(e0.predict.extra) # default argument values
 	e$sim.dir <- parent$sim.dir
-	e$sim.g2 <- ggroup(horizontal=TRUE, container=e$sim.g)
-	glabel("# ascii trajectories:", container=e$sim.g2)
-	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=e$sim.g2)
-	addSpace(e$sim.g2, 30)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=e$sim.g2)
-
+	e$pred.type <- 'e0'
+	.create.extra.countries.group(g, e, main.win, defaults)
 	addSpring(g)
 	predict.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='e0.predict.extra', package='bayesLife', 
 				parent.group=predict.g,
 						parent.window=main.win)
 	addSpring(predict.g)
-	gbutton(' Generate Script ', container=predict.g, handler=run.e0.prediction.extra,
-				action=list(mw=main.win, env=e, script=TRUE))
-	gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.e0.prediction.extra, 
+	create.generate.script.button(handler=run.e0.prediction.extra, action=list(mw=main.win, env=e, script=TRUE),
+								container=predict.g)
+	bDem.gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=run.e0.prediction.extra, 
 				action=list(mw=main.win, env=e, script=FALSE)), container=predict.g)
 
 	return(e)		  
@@ -152,12 +123,14 @@ run.e0.prediction.extra <- function(h, ...)
 	params[['countries']] <- if(svalue(e$all.countries)) NULL else e$selected.countries
 	
 	if (h$action$script) {
-		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
-		gtext(paste('e0.predict.extra(', paste(paste(names(params), params, sep='='), collapse=', '),
-											 ')',sep=' '), 
-					container=script.text)
+		cmd <- paste('e0.predict.extra(', paste(paste(names(params), params, sep='='), collapse=', '),
+											 ')',sep=' ')
+		create.script.widget(cmd, h$action$mw, package="bayesLife")
 	} else {
-		do.call('e0.predict.extra', params)
+		.run.prediction(e, type='e0', handler=get.e0.prediction.status, option='bDem.e0pred', 
+								call='e0.predict.extra', params=params, 
+								sim.name='e0 extra prediction', main.win=h$action$mw,
+								interval=1000)
 	}
 }
 
@@ -166,7 +139,8 @@ e0.joint.male.group <- function(g, main.win, parent) {
 	e$sim.dir <- parent$sim.dir
 	defaults <- formals(e0.jmale.predict) # default argument values
 	defaults.est <- formals(e0.jmale.estimate)
-	estim.f <- gframe("<span color='blue'>Estimation Settings</span>", markup=TRUE, 
+	addSpace(g, 10)
+	estim.f <- gframe("<span color='blue'>Estimation settings</span>", markup=TRUE, 
 							horizontal=FALSE, container=g)
 	g1 <- ggroup(horizontal=TRUE, container=estim.f)
 	est.lo <- glayout(container=g1)
@@ -184,25 +158,27 @@ e0.joint.male.group <- function(g, main.win, parent) {
 	
 	g2 <- ggroup(horizontal=TRUE, container=estim.f)
 	glabel("User-defined male e0 file:", container=g2)
-	e$my.e0.file <- gfilebrowse(eval(defaults$my.e0.file), type='open', 
+	e$my.e0.file <- bDem.gfilebrowse(eval(defaults$my.e0.file), type='open', 
 					  width=40, quote=FALSE, container=g2)
-					  
-	pred.f <- gframe("<span color='blue'>Prediction Settings</span>", markup=TRUE, 
+	
+	addSpace(g, 10)				  
+	pred.f <- gframe("<span color='blue'>Prediction settings</span>", markup=TRUE, 
 							horizontal=FALSE, container=g)
 	g3 <- ggroup(horizontal=TRUE, container=pred.f)
 	glabel('Female-Male Gap limits:', container=g3)
 	e$gap.lim <- gedit("0, 18", container=g3, width=10)
 	addSpace(g3, 20)
 	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=g3)
-	
+	addSpace(g, 10)
+	.create.status.label(g, e)
 	addSpring(g)
 	predict.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic=c('e0.jmale.predict', 'e0.jmale.estimate'), package='bayesLife', 
 				parent.group=predict.g, parent.window=main.win)
 	addSpring(predict.g)
-	gbutton(' Generate Script ', container=predict.g, handler=joint.male.prediction,
-				action=list(mw=main.win, env=e, script=TRUE))
-	gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=joint.male.prediction, 
+	create.generate.script.button(handler=joint.male.prediction, 
+				action=list(mw=main.win, env=e, script=TRUE), container=predict.g)
+	bDem.gbutton(action=gaction(label=' Make Prediction ', icon='evaluate', handler=joint.male.prediction, 
 				action=list(mw=main.win, env=e, script=FALSE)), container=predict.g)
 	return(e)
 }
@@ -227,16 +203,19 @@ joint.male.prediction <- function(h, ...)
 	}
 	
 	if (h$action$script) {
-		script.text <- gwindow('bayesLife commands', parent=h$action$mw)
 		cmd <- paste('pred <- get.e0.prediction(sim.dir=', params$sim.dir, 
 						')\n', sep='')
 		params$sim.dir <- NULL
 		cmd <- paste(cmd, 'e0.jmale.predict(pred,', paste(paste(names(params), params, sep='='), collapse=', '),
 											 ')',sep=' ')
-		gtext(cmd, container=script.text)
+		create.script.widget(cmd, h$action$mw, package="bayesLife")
 	} else {
 		pred <- get.e0.prediction(params$sim.dir)
 		params$sim.dir <- NULL
-		do.call('e0.jmale.predict', c(list(e0.pred=pred), params))
+		.run.prediction(e, type='e0', handler=get.e0.prediction.status, option='bDem.e0pred', 
+								call='e0.jmale.predict', params=c(list(e0.pred=pred), params), 
+								sim.name='e0 joint male prediction', main.win=h$action$mw,
+								action=list(sb=e$statuslabel),
+								interval=1000)
 	}
 }

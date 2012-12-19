@@ -10,8 +10,8 @@ Provides Graphical user interface for the packages \pkg{bayesTFR}, \pkg{bayesLif
 \details{
 \tabular{ll}{
 Package: \tab bayesDem\cr
-Version: \tab 1.7-0\cr
-Date: \tab 2012-06-06\cr
+Version: \tab 2.1-1\cr
+Date: \tab 2012-12-19\cr
 Depends: \tab R (>= 2.9.0), cairoDevice, gWidgets, gWidgetsRGtk2, bayesTFR, bayesLife, bayesPop\cr
 License: \tab  GPL (>= 2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr
@@ -31,6 +31,8 @@ Hana Sevcikova <hanas@u.washington.edu>
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 }
 \references{
+A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
+
 Hana Sevcikova, Leontine Alkema, Adrian E. Raftery (2011). bayesTFR: An
   R Package for Probabilistic Projections of the Total Fertility Rate.
   Journal of Statistical Software, 43(1), 1-29.

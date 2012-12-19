@@ -1,14 +1,15 @@
 TFRrunMCMCgroup <- function(g, main.win, parent) {
 	# parent needed for wpp set in the parent function
-	e <- new.env()
-	e$nb <- gnotebook(container=g, expand=TRUE)
-	all.c.g <- ggroup(label="<span color='#0B6138'>All Countries</span>", markup=TRUE, 
-						horizontal=FALSE, container=e$nb)
-	e$all.c.env <- mcmc.all.countries.group(all.c.g, main.win, parent)
-	extra.c.g <- ggroup(label="<span color='#0B6138'>Extra Areas &amp; Regions</span>", 
-						markup=TRUE, horizontal=FALSE, container=e$nb)
-	e$extra.c.env <- mcmc.extra.countries.group(extra.c.g, main.win, parent)
-	svalue(e$nb) <- 1
+	nb <- gnotebook(container=g, expand=TRUE)
+	set.widget.bgcolor(nb, color.main)
+	set.widget.basecolor(nb, color.nb.inactive)
+	all.c.g <- ggroup(label="  <span color='#0B6138'>All Countries</span>  ", markup=TRUE, 
+						horizontal=FALSE, container=nb)
+	mcmc.all.countries.group(all.c.g, main.win, parent)
+	extra.c.g <- ggroup(label="  <span color='#0B6138'>Extra Areas &amp; Regions</span>  ", 
+						markup=TRUE, horizontal=FALSE, container=nb)
+	mcmc.extra.countries.group(extra.c.g, main.win, parent)
+	svalue(nb) <- 1
 }
 
 .enable.auto.run <- function(enable, e) {
@@ -17,74 +18,85 @@ TFRrunMCMCgroup <- function(g, main.win, parent) {
 	enabled(e$iter) <- !enable 
 }
 
+.create.process.group <- function(g, e, defaults, show.buffer.size=TRUE) {
+	leftcenter <- c(-1,0)
+	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, spacing=10, container=g)
+	pclo <- glayout(container=paral.g)
+	pclo[1,1] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose)
+	pclo[1,2, anchor=leftcenter] <- "Verbose iter:"
+	pclo[1,3] <- e$verbose.iter <- gedit(defaults$verbose.iter, width=4, container=pclo)
+	pclo[2,1] <- e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=pclo)
+	pclo[2,2, anchor=leftcenter] <- "Number of nodes:"
+	pclo[2,3] <- e$nr.nodes <- gedit(defaults$nr.chains, width=2, container=pclo)
+	if(show.buffer.size) {
+		pclo[3,2, anchor=leftcenter] <- "Buffer size:"
+		pclo[3,3] <- e$buffer.size <- gedit(defaults$buffer.size, width=4, container=pclo)
+	}
+}
+
+.create.mcmc.process.group <- function(g, e, main.win, defaults, type='tfr', advance.settigs.function=mcmc.advance.settings) {
+	leftcenter <- c(-1,0)
+	g2 <- ggroup(horizontal=TRUE, container=g)
+	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, spacing=10, container=g2)
+	mclo <- glayout(container=mcmc.g)
+	e$run.prediction <- FALSE
+	mclo[1,1] <- e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', container=mclo,
+							handler=function(h,...){.enable.auto.run(svalue(h$obj), e)})
+	mclo[1,2:4] <- e$auto.conf.b <- bDem.gbutton(' Configure auto run ', container=mclo, handler=configure.auto.run, 
+				action=list(mw=main.win, env=e, cont.run=FALSE, type=type))
+	mclo[2,1, anchor=leftcenter] <- glabel("Number of chains:")
+	mclo[2,2] <- e$nr.chains <- gedit(defaults$nr.chains, width=2)
+	mclo[3,1, anchor=leftcenter] <- glabel("Number of iterations:")
+	mclo[3,2] <- e$iter <- gedit(defaults$iter, width=7)
+	mclo[2,3, anchor=leftcenter] <- glabel("Thin:")
+	mclo[2,4] <- e$thin <- gedit(defaults$thin, width=2)
+	.enable.auto.run(defaults$iter=='auto', e)
+	mclo[3,3, anchor=leftcenter] <- glabel("RNG seed:")
+	mclo[3,4] <- e$seed <- gedit(defaults$seed, width=4)
+	mclo[4,1, anchor=leftcenter] <- glabel("File compression:")
+	mclo[4,2] <- e$compression.type <- bDem.gdroplist(c('None', 'xz', 'bz', 'gz'), container=mclo)
+	mclo[5,1:4] <- bDem.gbutton('  Advanced MCMC Settings  ',  handler=advance.settigs.function, 
+				action=list(mw=main.win, env=e))	
+	addSpring(g2)
+	.create.process.group(g2, e, defaults)
+}
 mcmc.all.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
 	defaults <- formals(run.tfr.mcmc) # default argument values
-
-	out.g <- gframe("<span color='blue'>Output settings</span>", markup=TRUE, horizontal=FALSE, container=g)
-	#font(e$out.g) <- c(color='blue')
-	e$output.dir <- parent$sim.dir				
-	
-	out.g2 <- ggroup(horizontal=TRUE, container=out.g)
-	e$replace.output <- gcheckbox("Overwrite existing results in simulation directory", 
-									checked=defaults$replace.output, container=out.g2)
-	addSpace(out.g2, 20)
-	glabel("Buffer size:", container=out.g2)
-	e$buffer.size <- gedit(defaults$buffer.size, width=4, container=out.g2)
-
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, container=g)
-	auto.g <- ggroup(horizontal=TRUE, container=mcmc.g)
-	e$run.prediction <- FALSE
-	e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', container=auto.g,
-							handler=function(h,...){.enable.auto.run(svalue(h$obj), e)})
-	e$auto.conf.b <- gbutton(' Configure auto run ', container=auto.g, handler=configure.auto.run, 
-				action=list(mw=main.win, env=e, cont.run=FALSE))
-	iter.g1 <- ggroup(horizontal=TRUE, container=mcmc.g)
-	glabel("Number of chains:", container=iter.g1)
-	e$nr.chains <- gedit(defaults$nr.chains, width=2, container=iter.g1)
-	glabel("Number of iterations:", container=iter.g1)
-	e$iter <- gedit(defaults$iter, width=7, container=iter.g1)
-	glabel("Thin:", container=iter.g1)
-	e$thin <- gedit(defaults$thin, width=2, container=iter.g1)
-	.enable.auto.run(defaults$iter=='auto', e)
-	glabel("RNG seed:", container=iter.g1)
-	e$seed <- gedit(defaults$seed, width=4, container=iter.g1)
-		
-	time.g <- gframe("<span color='blue'>TFR time series</span>", markup=TRUE, horizontal=FALSE, container=g)
-	time.g1 <- ggroup(horizontal=TRUE, container=time.g)
-	glabel("Start year:", container=time.g1)
-	e$start.year <- gedit(defaults$start.year, width=4, container=time.g1)
-	glabel("     Present year:", container=time.g1)
-	e$present.year <- gedit(defaults$present.year, width=4, container=time.g1)
-	glabel("     WPP year:", container=time.g1)
-	glabel(parent$wpp.year, container=time.g1)
-	
-	time.g2 <- ggroup(horizontal=TRUE, container=time.g)
-	glabel("User-defined TFR file:", container=time.g2)
-	e$my.tfr.file <- gfilebrowse(eval(defaults$my.tfr.file), type='open', 
-					  width=40, quote=FALSE, container=time.g2)
-
-	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=paral.g)
-	addSpace(paral.g, 10)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=paral.g)
-	glabel("  Number of nodes:", container=paral.g)
-	e$nr.nodes <- gedit(svalue(e$nr.chains), width=2, container=paral.g)
-
+	e$output.dir <- parent$sim.dir
+	leftcenter <- c(-1,0)	
+	addSpace(g, 10)
+	time.g <- gframe("<span color='blue'>TFR time series</span>", markup=TRUE, horizontal=FALSE, spacing=10, container=g)
+	timelo <- glayout(container=time.g)
+	timelo[1,1, anchor=leftcenter] <- glabel("Start year:", container=timelo)
+	timelo[1,2] <- e$start.year <- gedit(defaults$start.year, width=4, container=timelo)
+	#addSpace(time.g1, 20)
+	timelo[1,3, anchor=leftcenter] <- glabel("Present year:", container=timelo)
+	timelo[1,4] <- e$present.year <- gedit(defaults$present.year, width=4, container=timelo)
+	#addSpring(time.g1)
+	timelo[1,5, anchor=leftcenter] <- glabel("WPP year:", container=timelo)
+	timelo[1,6, anchor=c(1,0)] <- glabel(parent$wpp.year, container=timelo)
+	#time.g2 <- ggroup(horizontal=TRUE, container=time.g, expand=TRUE)
+	timelo[2,1:2, anchor=leftcenter] <- glabel("User-defined TFR file:", container=timelo)
+	#addSpring(time.g2)
+	timelo[2,3:6] <- e$my.tfr.file <- bDem.gfilebrowse(eval(defaults$my.tfr.file), type='open', 
+					  width=30, quote=FALSE, container=timelo)
+					  
+	addSpace(g, 10)
+	.create.mcmc.process.group(g, e, main.win, defaults)
+	addSpace(g, 10)
+	.create.status.label(g, e)
 	addSpring(g)
 	adv.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic=c('run.tfr.mcmc', 'bayesTFR-package'), package='bayesTFR', parent.group=adv.g,
 						parent.window=main.win)
-	gbutton('  Advanced Settings  ', container=adv.g, handler=mcmc.advance.settings, 
-				action=list(mw=main.win, env=e))
 				
 	addSpring(adv.g)
-	gbutton(' Generate Script ', container=adv.g, handler=mcmc.run,
-						action=list(mw=main.win, env=e, script=TRUE, wpp.year=parent$wpp.year))
-	gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=mcmc.run, 
+	create.generate.script.button(handler=mcmc.run, action=list(mw=main.win, env=e, script=TRUE, wpp.year=parent$wpp.year),
+								container=adv.g)
+	bDem.gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=mcmc.run, 
 				action=list(mw=main.win, env=e, script=FALSE, wpp.year=parent$wpp.year, parent.group=g)), 
 				container=adv.g)
-	e$statusbar <- gstatusbar() # don't display now
 	return(e)
 	}
 
@@ -93,33 +105,37 @@ mcmc.run <- function(h, ...) {
 	e <- h$action$env
 	if(!has.required.arguments(list(output.dir='Simulation directory'), env=e)) return()
 	param.names <- list(numeric=c('buffer.size', 'nr.nodes', 'iter', 'thin', 'nr.chains', 'start.year', 
-									'present.year', 'seed'),
-						text=c('output.dir', 'my.tfr.file'),
-						logical=c('replace.output', 'verbose', 'parallel'))
+									'present.year', 'seed', 'verbose.iter'),
+						text=c('output.dir', 'my.tfr.file', 'compression.type'),
+						logical=c('verbose', 'parallel'))
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	params[['wpp.year']] <- h$action$wpp.year
 	
 	run.auto <- svalue(e$run.auto)
 	if (run.auto) {
 		params[['auto.conf']] <- e$auto.conf
+		op <- options("useFancyQuotes")
+		options(useFancyQuotes = FALSE)
 		params[['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
+		options(op)
 	}
+
+	outdir <- get.parameters(list(text='output.dir'), e, quote=FALSE)$output.dir # to avoid double quoting if script is TRUE
+	if(file.exists(outdir) && (length(list.files(outdir)) > 0)) {
+		params[['replace.output']] <- FALSE
+		if (gconfirm(paste('Non-empty directory', outdir, 
+								'already exists.\nDo you want to overwrite existing results?'),
+				icon='question', parent=h$action$mw))
+			params[['replace.output']] <- TRUE
+		else return(NULL)
+	}
+
 	if (h$action$script) {
-		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
-		commands <- paste('m <- run.tfr.mcmc(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
-					paste(paste(names(e$params), e$params, sep='='), collapse=', '),
-											 ')',sep=' ')
+		commands <- paste('m <- run.tfr.mcmc(', assemble.arguments(c(params, e$params)), ')', sep=' ')
 		if(run.auto && e$run.prediction) 
 			commands <- paste(commands, '\n\ntfr.predict(m, use.diagnostics=TRUE)', sep='')
-		gtext(commands, container=script.text)
+		create.script.widget(commands, h$action$mw, package="bayesTFR")
 	} else {
-		if(!params[['replace.output']] & file.exists(params[['output.dir']])) {
-			if(length(list.files(params[['output.dir']])) > 0) {
-				gmessage(paste('Non-empty directory', params[['output.dir']], 
-								'already exists.\nCheck "Overwrite existing results" to delete its content.'))
-				return()
-			}
-		}
 		run <- FALSE
 		if ((params[['iter']] == 'auto' && ((!is.null(params[['auto.conf']]) 
 				&& params[['auto.conf']]$iter > 100) || is.null(params[['auto.conf']]))) 
@@ -129,25 +145,40 @@ mcmc.run <- function(h, ...) {
 					handler=function(h, ...) run <<- TRUE)
 		} else run <- TRUE
 		if(run) {
-			#add(h$action$mw, e$statusbar)
-			#svalue(e$statusbar) <- 'Starting MCMC simulation ... move mouse to update status ...'
-			#if(file.exists(params[['output.dir']])) unlink(params[['output.dir']], recursive=TRUE)
-			#handler.id <- addHandlerIdle(e$statusbar, interval=1000, handler = get.simulation.status,
-			#					action=list(sb=e$statusbar, sim.dir=params[['output.dir']]))
-			#handler.id <- addHandlerMouseMotion(h$action$mw, handler = get.simulation.status,
-			#					action=list(sb=e$statusbar, sim.dir=params[['output.dir']]))
-			m <- do.call('run.tfr.mcmc', c(params, e$params))
-			if(run.auto && e$run.prediction)
-				tfr.predict(m, use.diagnostics=TRUE)
-			#svalue(e$statusbar) <- 'Simulation finished.'
-			#removeHandler(h$action$mw, handler.id)
-			#gSourceRemove(handler.id)
-			#delete(h$action$mw, e$statusbar)
+			if(file.exists(params[['output.dir']])) unlink(params[['output.dir']], recursive=TRUE)
+			m <- .run.simulation(e, handler=get.tfr.simulation.status, option='bDem.TFRmcmc', 
+								call='run.tfr.mcmc', params=c(params, e$params), 
+								sim.name='TFR MCMC simulation', main.win=h$action$mw,
+								action=list(sb=e$statuslabel, sim.dir=params[['output.dir']]),
+								interval=5000)
+			if(run.auto && e$run.prediction) {
+				.run.prediction(e, handler=get.tfr.prediction.status, option='bDem.TFRpred', 
+								call='tfr.predict', params=list(m, use.diagnostics=TRUE), 
+								sim.name='TFR prediction', main.win=h$action$mw,
+								action=list(sb=e$statuslabel),
+								interval=1000)
+			}
 		}
 	}
 }
 
-get.simulation.status <- function(h, ...) {
+.run.simulation <- function(e, handler, option, call, params, sim.name, main.win, action=list(), interval=1000) {
+	svalue(e$statuslabel) <- paste('Starting', sim.name, '...')
+	handler.id <- addHandlerIdle(e$statuslabel, interval=interval, handler = handler, action=action)
+	opt <- list()
+	opt[[option]] <- TRUE
+	options(opt)
+	m <- try(do.call(call, params))
+	opt[[option]] <- FALSE
+	options(opt)
+	if(inherits(m, "try-error")) svalue(e$statuslabel) <- paste(sim.name, 'failed.')
+	else svalue(e$statuslabel) <- paste(sim.name, 'finished.')
+	removeHandler(main.win, handler.id)
+	gSourceRemove(handler.id)
+	return(m)
+}
+
+get.tfr.simulation.status <- function(h, ...) {
 	sb <- h$action$sb
 	sim.dir <- h$action$sim.dir
 	warn <- getOption('warn')
@@ -155,12 +186,22 @@ get.simulation.status <- function(h, ...) {
 	mcmc.set <- get.tfr.mcmc(sim.dir)
 	options(warn=warn)
 	if(is.null(mcmc.set)) return()
-	get.item <- function(x) return(x$finished.iter)
-	finished <- sapply(mcmc.set$mcmc.list, get.item)
-	svalue(sb) <- paste('Running simulation ... at iteration:', 
-				 	paste('chain ', 1:length(finished), ': ', finished, sep='', collapse=', '))
+	get.finished <- function(x) return(x$finished.iter)
+	get.iter <- function(x) return(x$iter)
+	finished <- sapply(mcmc.set$mcmc.list, get.finished)
+	total <- sapply(mcmc.set$mcmc.list, get.iter)
+	svalue(sb) <- paste('Running TFR simulation ... Iterations - ', 
+				 	paste('chain ', 1:length(finished), ': ', finished, ' (', total, ')', sep='', collapse=', '))
 	
 }
+
+get.tfr.simulation.extra.status <- function(h, ...) {
+	sb <- h$action$sb
+	# We don't have any status info for the extra run, so just keep a static label
+	svalue(sb) <- 'Running TFR extra simulation ... '
+	
+}
+
 
 configure.auto.run <- function(h, ...) {
 	cont.run <- h$action$cont.run
@@ -199,7 +240,7 @@ configure.auto.run <- function(h, ...) {
 	} else { # create the window
 		
 	h$action$env$auto.conf.win <- auto.conf.win <- 
-					gwindow('Configuration of Auto Run',
+					bDem.gwindow('Configuration of Auto Run',
 						parent=h$action$mw, visible=FALSE,
 						handler=function(h, ...) {
 							h$action$env$auto.run.okhandler <- NULL
@@ -207,35 +248,38 @@ configure.auto.run <- function(h, ...) {
 	e <- new.env()
 	g <- ggroup(container=auto.conf.win, horizontal=FALSE)
 	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, container=g)
-	mcmc.g1 <- ggroup(container=mcmc.g, horizontal=TRUE)
-	glabel("Number of iterations:", container=mcmc.g1)
-	e$iter <- gedit(defaults$iter, width=7, container=mcmc.g1)
-	glabel("Number of chains:", container=mcmc.g1)
-	e$nr.chains <- gedit(defaults$nr.chains, width=2, container=mcmc.g1)
+	#mcmc.g1 <- ggroup(container=mcmc.g, horizontal=TRUE)
+	mclo <- glayout(container=mcmc.g)
+	mclo[1,1] <- glabel("Number of chains:", container=mclo)
+	mclo[1,2] <- e$nr.chains <- gedit(defaults$nr.chains, width=2, container=mclo)
+	mclo[2,1] <- glabel("Number of iterations:", container=mclo)
+	mclo[2,2] <- e$iter <- gedit(defaults$iter, width=7, container=mclo)
 	enabled(e$nr.chains) <- !cont.run
 
-	mcmc.g2 <- ggroup(container=mcmc.g, horizontal=TRUE)
-	glabel("Iteration increments: ", container=mcmc.g2)
-	e$iter.incr <- gedit(defaults$iter.incr, width=7, container=mcmc.g2)
+	#mcmc.g2 <- ggroup(container=mcmc.g, horizontal=TRUE)
+	mclo[3,1] <- glabel("Iteration increments: ", container=mclo)
+	mclo[3,2] <- e$iter.incr <- gedit(defaults$iter.incr, width=7, container=mclo)
 	
-	conv.g <- gframe("<span color='blue'>Convergence diagnostics</span>", markup=TRUE, horizontal=TRUE, container=g)
-	glabel("Burnin:", container=conv.g)
-	e$burnin <- gedit(defaults$burnin, width=7, container=conv.g)
-	glabel("Thin:", container=conv.g)
-	e$thin <- gedit(defaults$thin, width=7, container=conv.g)
+	#conv.g <- gframe("<span color='blue'>Convergence diagnostics</span>", markup=TRUE, horizontal=TRUE, container=g)
+	mclo[1,3:4] <- 'Convergence diagnostics:'
+	mclo[2,3] <- glabel("Burnin:", container=mclo)
+	mclo[2,4] <- e$burnin <- gedit(defaults$burnin, width=7, container=mclo)
+	mclo[3,3] <- glabel("Thin:", container=mclo)
+	mclo[3,4] <- e$thin <- gedit(defaults$thin, width=7, container=mclo)
 	
 	setup.g <- gframe("<span color='blue'>Run setup</span>", markup=TRUE, horizontal=TRUE, container=g)
 	glabel("Maximum loops:", container=setup.g)
 	e$max.loops <- gedit(defaults$max.loops, width=2, container=setup.g)
+	addSpace(setup.g, 10)
 	e$run.prediction <- gcheckbox("Make predictions", checked=FALSE, container=setup.g)
 	addSpring(g)
 	# Buttons
 	button.g <- ggroup(container=g, horizontal=TRUE)
-	gbutton('Cancel', container=button.g, handler=function(h, ...) 
+	bDem.gbutton('Cancel', container=button.g, handler=function(h, ...) 
 					visible(auto.conf.win) <- FALSE)
 	addSpring(button.g)
-	gbutton('  Set to Default Values  ', container=button.g, handler=set.defaults)
-	e$auto.conf.okbutton <- gbutton('OK', container=button.g)
+	bDem.gbutton(action=gaction(label='  Set to Default Values  ', icon='refresh', handler=set.defaults), container=button.g)
+	e$auto.conf.okbutton <- bDem.gbutton('OK', container=button.g)
 	
 		if(!is.null(h$action$env$auto.conf)) { # OK button previously clicked 
 			for (par in names(defaults)) 
@@ -325,7 +369,7 @@ mcmc.advance.settings <- function(h, ...) {
 		visible(h$action$env$adv.set.win) <- TRUE
 	} else { # create the Advanced Parameters window
 		h$action$env$adv.set.win <- adv.set.win <- 
-					gwindow('Settings for Bayesian Hierarchical TFR Model ',
+					bDem.gwindow('Settings for Bayesian Hierarchical TFR Model ',
 						parent=h$action$mw, visible=FALSE,
 						handler=function(h, ...) {
 							h$action$env$adv.set.okhandler <- NULL
@@ -383,6 +427,7 @@ mcmc.advance.settings <- function(h, ...) {
 	uniform.flo[l,2] <- '   lower   '
 	uniform.flo[l,3] <- '   upper   '
 	uniform.flo[l,4] <- ' width '
+	uniform.flo[l,5] <- ' min '
 	
 	l <- l+1 # new row
 	uniform.flo[l,1] <- 'U:'
@@ -413,8 +458,7 @@ mcmc.advance.settings <- function(h, ...) {
 	uniform.flo[l,2] <- e$sigma0.low <- gedit(defaults$sigma0.low, width=5, container=uniform.flo)
 	uniform.flo[l,3] <- e$sigma0.up <- gedit(defaults$sigma0.up, width=5, container=uniform.flo)
 	uniform.flo[l,4] <- e$sigma0.width <- gedit(defaults$sigma0.width, width=5, container=uniform.flo)
-	uniform.flo[l,5] <- ' min:'
-	uniform.flo[l,6] <- e$sigma0.min <- gedit(defaults$sigma0.min, width=5, container=uniform.flo)
+	uniform.flo[l,5] <- e$sigma0.min <- gedit(defaults$sigma0.min, width=5, container=uniform.flo)
 
 	l <- l+1 # new row
 	uniform.flo[l,1] <- 'const (c):'
@@ -503,7 +547,7 @@ mcmc.advance.settings <- function(h, ...) {
 	gamma.g2[2,1, expand=FALSE] <- glabel('Gamma rate: nu_0/2*s_0^2', container=gamma.g2)
 	
 	# Starting values
-	start.f <- gframe("<span color='blue'>Starting Values</span>", markup=TRUE, container=e$adv.g, horizontal=FALSE)
+	start.f <- gframe("<span color='blue'>Starting values</span>", markup=TRUE, container=e$adv.g, horizontal=FALSE)
 	start.g1 <- ggroup(container=start.f, horizontal=TRUE)
 	glabel('Leave empty for starting values being equally-spaced between lower and upper bound.', container=start.g1)
 	
@@ -526,11 +570,12 @@ mcmc.advance.settings <- function(h, ...) {
 
 	# Buttons
 	button.g <- ggroup(container=e$adv.g, horizontal=TRUE)
-	gbutton('Cancel', container=button.g, handler=function(h, ...) 
+	bDem.gbutton('Cancel', container=button.g, handler=function(h, ...) 
 					visible(adv.set.win) <- FALSE)
 	addSpring(button.g)
-	e$adv.set.defaultbutton <- gbutton('  Set to Default Values  ', container=button.g, handler=set.defaults)
-	e$adv.set.okbutton <- gbutton('OK', container=button.g)
+	e$adv.set.defaultbutton <- bDem.gbutton(action=gaction(label='  Set to Default Values  ', icon='refresh', handler=set.defaults), 
+								container=button.g)
+	e$adv.set.okbutton <- bDem.gbutton('OK', container=button.g)
 	
 		if(!is.null(h$action$env$params)) { # OK button previously clicked 
 			for (par in param.names) 
@@ -552,68 +597,90 @@ mcmc.advance.settings <- function(h, ...) {
 												handler=set.advance.pars)
 }
 
+.create.extra.TS.group <- function(g, main.win, e, defaults, my.file.item='my.tfr.file', type='tfr', label.type='TFR') {
+	g2 <- ggroup(horizontal=TRUE, container=g)
+	tfr.g <- gframe(paste("<span color='blue'>", label.type, " time series</span>", sep=''), markup=TRUE, 
+					horizontal=FALSE, container=g2)
+	tlo <- glayout(container=tfr.g)
+	tlo[1,1:2] <- bDem.gbutton(paste("  Select countries/regions from the UN ", label.type, " file  ", sep=''), 
+				container=tlo, handler=multiSelectCountryMenu,
+				action=list(mw=main.win, env=e, type=type, label.widget.name='extra.country.label'))
+	# For showing selected countries
+	tlo[2,1:2, anchor=c(-1,0)] <- e$extra.country.label <- glabel('', container=tlo)
+	tlo[3,1, anchor=c(-1,0)] <- glabel(paste("User-defined ", label.type, " file:", sep=''), container=tlo)
+	tlo[3,2] <- e[[my.file.item]] <- bDem.gfilebrowse(eval(defaults[[my.file.item]]), type='open', 
+					  width=30, quote=FALSE, container=tlo)
+}
+
+.create.extra.mcmc.process <- function(g, e, defaults) {
+	leftcenter <- c(-1,0)
+	g2 <- ggroup(horizontal=TRUE, container=g)		  
+	iter.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=TRUE, container=g2)
+	itlo <- glayout(container=iter.g)
+	itlo[1,1] <- glabel("Number of iterations:", container=itlo)
+	itlo[1,2] <- e$iter <- gedit(defaults$iter, width=7, container=itlo)
+	itlo[2,1] <- glabel("Thin:", container=itlo)
+	itlo[2,2] <- e$thin <- gedit(defaults$thin, width=2, container=itlo)
+	itlo[3,1] <- glabel("Burnin:", container=itlo)
+	itlo[3,2] <- e$burnin <- gedit(defaults$burnin, width=4, container=itlo)
+		
+	addSpace(g2,10)			  					  
+	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g2)
+	pclo <- glayout(container=paral.g)
+	pclo[1,1] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=pclo)
+	#addSpace(e$paral.g, 10)
+	pclo[1,2, anchor=leftcenter] <- "Verbose iter:"
+	pclo[1,3] <- e$verbose.iter <- gedit(defaults$verbose.iter, width=4, container=pclo)
+	pclo[2,1] <- e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=pclo)
+	pclo[2,2, anchor=leftcenter] <- glabel("Number of nodes:", container=pclo)
+	pclo[2,3] <- e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=pclo)
+
+}
+
+.create.status.label <- function(g, e) {
+	statusg <- ggroup(container=g, horizontal=TRUE)
+	e$statuslabel <- glabel('', container=statusg)
+	addSpring(statusg)
+}
+
 mcmc.extra.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
 	defaults <- formals(run.tfr.mcmc.extra) # default argument values
 	e$sim.dir <- parent$sim.dir
-	
-	e$tfr.g <- gframe("<span color='blue'>TFR time series</span>", markup=TRUE, horizontal=FALSE, container=g)
-	e$tfr.g1 <- ggroup(horizontal=TRUE, container=e$tfr.g)
-	#glabel('WPP', container=e$tfr.g1)
-	#wpps <- get.wpp.years()
-	#e$wpp.year <- gdroplist(wpps, container=e$tfr.g1)
-	gbutton("  Select countries/regions from the UN TFR-file  ", container=e$tfr.g1,
-				handler=multiSelectCountryMenu,
-				action=list(mw=main.win, env=e))
-	
-	e$tfr.g2 <- ggroup(horizontal=TRUE, container=e$tfr.g)
-	glabel("User-defined TFR-file:", container=e$tfr.g2)
-	e$my.tfr.file <- gfilebrowse(eval(defaults$my.tfr.file), type='open', 
-					  width=40, quote=FALSE, container=e$tfr.g2)
-					  
-	e$iter.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=TRUE, container=g)
-	glabel("Number of iterations:", container=e$iter.g)
-	e$iter <- gedit(defaults$iter, width=7, container=e$iter.g)
-	glabel("Thin:", container=e$iter.g)
-	e$thin <- gedit(defaults$thin, width=2, container=e$iter.g)
-	glabel("Burnin:", container=e$iter.g)
-	e$burnin <- gedit(defaults$burnin, width=4, container=e$iter.g)
-					  					  
-	e$paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=e$paral.g)
-	addSpace(e$paral.g, 10)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=e$paral.g)
-	glabel("  Number of nodes:", container=e$paral.g)
-	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=e$paral.g)
-	
+	addSpace(g, 10)
+	.create.extra.TS.group(g, main.win, e, defaults)			
+	addSpace(g, 10)
+	.create.extra.mcmc.process(g, e, defaults)
+	addSpace(g, 10)
+	.create.status.label(g, e)
 	addSpring(g)
-	e$button.g <- ggroup(horizontal=TRUE, container=g)
-	create.help.button(topic='run.tfr.mcmc.extra', package='bayesTFR', parent.group=e$button.g,
+	button.g <- ggroup(horizontal=TRUE, container=g)
+	create.help.button(topic='run.tfr.mcmc.extra', package='bayesTFR', parent.group=button.g,
 						parent.window=main.win)	
-	addSpring(e$button.g)
-	gbutton(' Generate Script ', container=e$button.g, handler=mcmc.run.extra,
-						action=list(mw=main.win, env=e, script=TRUE))
-	gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=mcmc.run.extra, 
-				action=list(mw=main.win, env=e, script=FALSE)), container=e$button.g)
-
+	addSpring(button.g)
+	create.generate.script.button(handler=mcmc.run.extra, action=list(mw=main.win, env=e, script=TRUE), container=button.g)
+	bDem.gbutton(action=gaction(label=' Run MCMC ', icon='execute', handler=mcmc.run.extra, 
+				action=list(mw=main.win, env=e, script=FALSE)), container=button.g)
 	return(e)
 }
 
 mcmc.run.extra <- function(h, ...) {
 	e <- h$action$env
 	if(!has.required.arguments(list(sim.dir='Simulation directory'), env=e)) return()
-	param.names <- list(numeric=c('nr.nodes', 'iter', 'thin', 'burnin'),
+	param.names <- list(numeric=c('nr.nodes', 'iter', 'thin', 'burnin', 'verbose.iter'),
 						text=c('sim.dir', 'my.tfr.file'),
 						logical=c('verbose', 'parallel'))
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	params[['countries']] <- e$selected.extra.countries
 	if (h$action$script) {
-		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
-		gtext(paste('run.tfr.mcmc.extra(', paste(paste(names(params), params, sep='='), collapse=', '), ',',
-											 ')',sep=' '), 
-					container=script.text)
+		cmd <- paste('run.tfr.mcmc.extra(', assemble.arguments(params), ')',sep=' ')
+		create.script.widget(cmd, h$action$mw, package="bayesTFR")
 	} else {
-		do.call('run.tfr.mcmc.extra', params)
+		.run.simulation(e, handler=get.tfr.simulation.extra.status, option='bDem.TFRmcmcExtra', 
+								call='run.tfr.mcmc.extra', params=params, 
+								action=list(sb=e$statuslabel),
+								sim.name='TFR MCMC extra simulation', main.win=h$action$mw,
+								interval=1000)
 	}
 }
 
@@ -664,6 +731,10 @@ multiSelectCountryMenu <- function(h, ...) {
 	country.selected <- function(h1, ...) {
 		h$action$env$selected.extra.countries <- svalue(h$action$env$sel.extra.country.gt)
 		visible(h$action$env$extra.country.sel.win) <- FALSE
+		if(!is.null(h$action$label.widget.name) && !is.null(h$action$env[[h$action$label.widget.name]])) {
+			svalue(h$action$env[[h$action$label.widget.name]]) <- paste(h$action$env$selected.extra.countries, collapse=',')
+		}
+		if(length(h$action$env$selected.extra.countries) == 0) h$action$env$selected.extra.countries <- NULL
 	}
 	new.window <- TRUE
 	if (!is.null(h$action$env$extra.country.sel.win)) {
@@ -712,5 +783,4 @@ multiSelectCountryMenu <- function(h, ...) {
 		removehandler(h$action$env$sel.extra.country.okbutton, h$action$env$sel.extra.country.ok.handler)
 	h$action$env$sel.extra.country.ok.handler <- addhandlerclicked(
 						h$action$env$sel.extra.country.okbutton, handler=country.selected)
-
 }
