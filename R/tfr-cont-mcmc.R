@@ -1,41 +1,40 @@
 TFRcontinueMCMCgroup <- function(g, main.win, parent=NULL) {
 	e <- new.env()
 	defaults <- formals(continue.tfr.mcmc) # default argument values
-
 	e$output.dir <- parent$sim.dir
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, container=g)
-	auto.g <- ggroup(horizontal=TRUE, container=mcmc.g)
 	e$run.prediction <- FALSE
-	e$run.auto <- gcheckbox("Auto simulation", checked=FALSE, 
-							container=auto.g, handler=function(h,...){.enable.auto.cont(svalue(h$obj), e)})
-	e$auto.conf.b <- gbutton(' Configure auto run ', container=auto.g, handler=configure.auto.run, 
-				action=list(mw=main.win, env=e, cont.run=TRUE))
-	iter.g <- ggroup(horizontal=TRUE, container=mcmc.g)
-	glabel("Number of iterations:", container=iter.g)
-	glabel("<span color='red'>*</span>", markup=TRUE, container=iter.g)
-	e$iter <- gedit(defaults$iter, width=7, container=iter.g)
-	glabel("Chain ids:", container=iter.g)
-	e$chain.ids <- gedit(defaults$chain.ids, width=10, container=iter.g)
-	.enable.auto.cont(FALSE, e)
-	
-	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE,
-					 horizontal=TRUE, container=g)
-	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=paral.g)
-	addSpace(paral.g, 5)
-	e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=paral.g)
-	glabel("  Number of nodes:", container=paral.g)
-	e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=paral.g)
-	
+	addSpace(g, 10)
+	g2 <- ggroup(horizontal=TRUE, container=g)
+	.create.autoconf.cont.group(g2, e, main.win, defaults)
+	.create.process.group(g2, e, defaults, show.buffer.size=FALSE)
+	addSpace(g, 10)
+	.create.status.label(g, e)
+
 	addSpring(g)
 	cont.g <- ggroup(horizontal=TRUE, container=g)
 	create.help.button(topic='continue.tfr.mcmc', package='bayesTFR', parent.group=cont.g,
 						parent.window=main.win)
 	addSpring(cont.g)
-	gbutton(' Generate Script ', container=cont.g, handler=mcmc.continue,
-				action=list(mw=main.win, env=e, script=TRUE))
-	gbutton(action=gaction(label=' Continue MCMC ', icon='execute', handler=mcmc.continue, 
+	create.generate.script.button(handler=mcmc.continue, action=list(mw=main.win, env=e, script=TRUE),
+								container=cont.g)
+	bDem.gbutton(action=gaction(label=' Continue MCMC ', icon='execute', handler=mcmc.continue, 
 				action=list(mw=main.win, env=e, script=FALSE)), container=cont.g)
 	return(e)
+}
+
+.create.autoconf.cont.group <- function(g, e, main.win, defaults) {
+	leftcenter <- c(-1,0)
+	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, spacing=10, container=g)
+	mclo <- glayout(container=mcmc.g)
+	mclo[1,1] <- e$run.auto <- gcheckbox("Auto simulation", checked=FALSE, 
+							container=mclo, handler=function(h,...){.enable.auto.cont(svalue(h$obj), e)})
+	mclo[1,2] <- e$auto.conf.b <- bDem.gbutton(' Configure auto run ', container=mclo, handler=configure.auto.run, 
+				action=list(mw=main.win, env=e, cont.run=TRUE))
+	mclo[2,1, anchor=leftcenter] <- glabel("Number of iterations:", container=mclo)
+	mclo[2,2] <- e$iter <- gedit(defaults$iter, width=7, container=mclo)
+	mclo[3,1, anchor=leftcenter] <- glabel("Chain ids:", container=mclo)
+	mclo[3,2] <- e$chain.ids <- gedit(defaults$chain.ids, width=10, container=mclo)
+	.enable.auto.cont(FALSE, e)
 }
 
 .enable.auto.cont <- function(enable, e) {
@@ -70,15 +69,22 @@ mcmc.continue <- function(h, ...) {
 		params[['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
 	}
 	if (h$action$script) {
-		script.text <- gwindow('bayesTFR commands', parent=h$action$mw)
 		commands <- paste('m <- continue.tfr.mcmc(', paste(paste(names(params), params, sep='='), collapse=', '),
 											 ')',sep=' ')
 		if(run.auto && e$run.prediction) 
 			commands <- paste(commands, '\n\ntfr.predict(m, use.diagnostics=TRUE, replace.output=TRUE)', sep='')
-		gtext(commands, container=script.text)
+		create.script.widget(commands, h$action$mw, package="bayesTFR")
 	} else {
-		m <- do.call('continue.tfr.mcmc', params)
+		m <- .run.simulation(e, handler=get.tfr.simulation.status, option='bDem.TFRmcmc', 
+								call='continue.tfr.mcmc', params=params, 
+								sim.name='TFR MCMC simulation', main.win=h$action$mw,
+								action=list(sb=e$statuslabel, sim.dir=params[['output.dir']]),
+								interval=5000)
 		if(run.auto && e$run.prediction)
-			tfr.predict(m, use.diagnostics=TRUE, replace.output=TRUE)
+			.run.prediction(e, handler=get.tfr.prediction.status, option='bDem.TFRpred', 
+								call='tfr.predict', params=list(m, use.diagnostics=TRUE, replace.output=TRUE), 
+								sim.name='TFR prediction', main.win=h$action$mw,
+								action=list(sb=e$statuslabel),
+								interval=1000)
 	}
 }

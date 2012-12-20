@@ -1,3 +1,23 @@
+2.1-1 (12/19/2012)
+-----
+Compression entry added to TFR and e0 MCMCs.
+
+2.1-0 (12/02/2012)
+-----
+Expressions added to populations tabs.
+
+Plot by age added to Pop trajectories.
+
+Maps now possible for population projections.
+
+2.0-0 (10/12/2012)
+-----
+Many internal changes.
+
+Appearance changed (color, GUI blocks, etc.)
+
+Status bar added to tabs that launch time expensive processes. 
+
 1.7-0 (06/06/2012)
 -----
 In the Population Projection tab - results - pyramids: Modified to reflect changes in the bayesPop
