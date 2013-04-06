@@ -5,7 +5,7 @@ tfrPredTab <- function(tfr.pred, main.win, wpp.year) {
 
 	eTFRp$wpp.year <- wpp.year
 	
-	create.sim.dir.widget(env=eTFRp, parent=tfr.pred, type='tfr', 
+	create.sim.dir.widget(env=eTFRp, parent=tfr.pred, type=c('tfr', 'tfr3'), 
 				main.win=main.win,
 				default=eval(formals(run.tfr.mcmc)$output.dir))
 	

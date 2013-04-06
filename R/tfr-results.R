@@ -1,7 +1,7 @@
 TFRresults.group <- function(g, main.win, parent) {
 	e <- new.env()
 	
-	#e$country.table <- get.table.of.countries(file.path(.find.package("bayesTFR"), "data", 
+	#e$country.table <- get.table.of.countries(file.path(find.package("bayesTFR"), "data", 
 	#						paste('WPP', parent$wpp.year, '_LOCATIONS', '.csv', sep='')))
 							
 	e$sim.dir <- parent$sim.dir
@@ -21,13 +21,13 @@ TFRresults.group <- function(g, main.win, parent) {
 	create.dlcurves.group(dl.curve.g, e, main.win)
 	
 	traces.g <- ggroup(label="<span color='#0B6138'>Parameter traces</span>", markup=TRUE, horizontal=FALSE, container=nb)
-	create.partraces.group(traces.g, e, main.win)
+	create.partraces.group.all(traces.g, e, main.win)
 	
 	############################################
 	# Convergence Diagnostics
 	############################################
 	convergence.g <- ggroup(label="<span color='#0B6138'>Convergence</span>", markup=TRUE, horizontal=FALSE, container=nb)
-	create.convergence.tab(convergence.g, e$sim.dir, main.win=main.win)	
+	create.convergence.group.all(convergence.g, e$sim.dir, main.win=main.win)	
 	svalue(nb) <- 1
 	return(e)
 }
@@ -42,9 +42,9 @@ TFRresults.group <- function(g, main.win, parent) {
 	lo[l+1,1, anchor=leftcenter] <- glabel('# trajectories:', container=lo)
 	lo[l+1,2] <- e$nr.traj <- gedit(20, width=6, container=lo)
 	lo[l,3, anchor=leftcenter] <- 	glabel('From year:', container=lo)
-	lo[l,4] <- e$start.year <- gedit(defaults$start.year, width=4, container=lo)
+	lo[l,4] <- e$start.year <- gedit(width=4, container=lo)
 	lo[l+1,3, anchor=leftcenter] <- glabel('To year:', container=lo)
-	lo[l+1,4] <- e$end.year <- gedit(defaults$end.year, width=4, container=lo)
+	lo[l+1,4] <- e$end.year <- gedit(width=4, container=lo)
 	lo[l,5] <- glabel('     ', container=lo)
 	lo[l,6:7] <- e$half.child.variant <- gcheckbox('+/- 0.5 child', checked=defaults$half.child.variant, 
 								container=lo)
@@ -248,17 +248,32 @@ create.dlcurves.group <- function(g, parent.env, main.win) {
 	tlo[4,7] <- e$thin <- gedit(1, width=5, container=tlo)
 }
 
-create.partraces.group <- function(g, parent.env, main.win) {
+create.partraces.group.all <- function(g, parent.env, main.win) {
+	type.nb <- gnotebook(container=g, expand=TRUE)
+	set.widget.bgcolor(type.nb, color.main)
+	set.widget.basecolor(type.nb, color.nb.inactive)
+	phaseII.g <- ggroup(label="<span color='darkred'>Phase II</span>", markup=TRUE, horizontal=FALSE, container=type.nb)
+	addSpace(phaseII.g, 10)
+	create.partraces.group(phaseII.g, parent.env, main.win)
+	phaseIII.g <- ggroup(label="<span color='darkred'>Phase III</span>", markup=TRUE, horizontal=FALSE, container=type.nb)
+	addSpace(phaseIII.g, 10)
+	create.partraces.group(phaseIII.g, parent.env, main.win, type='tfr3')
+	svalue(type.nb) <- 1
+}
+
+create.partraces.group <- function(g, parent.env, main.win, type='tfr') {
 	############################################
 	# Parameter Traces
 	############################################
 	e <- new.env()
 	e$sim.dir <- parent.env$sim.dir
-	e$pred.type <- 'tfr'
-	.create.partraces.settings.group(g, e, main.win, par.names=tfr.parameter.names(), par.names.cs=tfr.parameter.names.cs())
+	e$pred.type <- type
+	.create.partraces.settings.group(g, e, main.win, 
+			par.names=do.call(paste(type, '.parameter.names', sep=''), list()), 
+			par.names.cs=do.call(paste(type, '.parameter.names.cs', sep=''), list()))
 	addSpring(g)
 	traces.bg <- ggroup(horizontal=TRUE, container=g)
-	create.help.button(topic='tfr.partraces.plot', package='bayesTFR', parent.group=traces.bg,
+	create.help.button(topic=paste(type, '.partraces.plot', sep=''), package='bayesTFR', parent.group=traces.bg,
 						parent.window=main.win)	
 	addSpring(traces.bg)
 	SummaryB.traces <- gaction(label='Show summary', icon='dataframe', handler=showParTraces, 
@@ -267,6 +282,21 @@ create.partraces.group <- function(g, parent.env, main.win) {
 	GraphB.traces <- gaction(label='Graph', icon='lines', handler=showParTraces, 
 						action=list(mw=main.win, env=e, print.summary=FALSE))
 	bDem.gbutton(action=GraphB.traces, container=traces.bg)
+}
+
+create.convergence.group.all <- function(g, sim.dir, main.win) {
+	type.nb <- gnotebook(container=g, expand=TRUE)
+	set.widget.bgcolor(type.nb, color.main)
+	set.widget.basecolor(type.nb, color.nb.inactive)
+	phaseII.g <- ggroup(label="<span color='darkred'>Phase II</span>", markup=TRUE, horizontal=FALSE, container=type.nb)
+	addSpace(phaseII.g, 10)
+	create.convergence.tab(phaseII.g, sim.dir, main.win=main.win)
+	phaseIII.g <- ggroup(label="<span color='darkred'>Phase III</span>", markup=TRUE, horizontal=FALSE, container=type.nb)
+	addSpace(phaseIII.g, 10)
+	e3 <- create.convergence.tab(phaseIII.g, sim.dir, type='tfr3', main.win=main.win)
+	svalue(e3$keep.thin.mcmc) <- FALSE
+	enabled(e3$keep.thin.mcmc) <- FALSE
+	svalue(type.nb) <- 1
 }
 
 create.convergence.tab <- function(parent, sim.dir, type='tfr', package='bayesTFR', main.win=NULL) {
@@ -315,7 +345,8 @@ create.convergence.tab <- function(parent, sim.dir, type='tfr', package='bayesTF
 	addSpace(butg, 5)
 	ComputeDiag <- gaction(label=' Compute New Diagnostics ', icon='execute', handler=computeConvergenceDiag, 
 						action=list(mw=main.win, env=e, type=type, package=package, script=FALSE))
-	bDem.gbutton(action=ComputeDiag, container=butg)	
+	bDem.gbutton(action=ComputeDiag, container=butg)
+	return(e)
 }
 
 create.country.widget <- function(parent, defaults=NULL, main.win=NULL, glo = NULL, start.row=1, show.all=TRUE, 
@@ -720,12 +751,13 @@ showParTraces <- function(h, ...) {
 	if (cs==2) {
 		country.pars <- get.country.code.from.widget(e$country$country.w, e$country)
 		if(is.null(country.pars)) return(NULL)
-	}	
+	}
+	type <- e$pred.type
 	if(print.summary) {
 		mc.summary <- c()
 		warn <- getOption('warn')
 		options(warn=-1) # disable warning messages
-		mcmc.set <- get.tfr.mcmc(params[['sim.dir']])
+		mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), params['sim.dir'])
 		options(warn=warn)
 		con <- textConnection("mc.summary", "w", local=TRUE)
 		mc.exist <- TRUE
@@ -734,22 +766,19 @@ showParTraces <- function(h, ...) {
 			cat('No simulation available in this directory.')
 			mc.exist <- FALSE
 		}
-	} else create.graphics.window(parent=h$action$mw, title="Parameter traces", dpi=150)
+	} else create.graphics.window(parent=h$action$mw, title="Parameter traces", dpi=100)
 	if (cs==2) { # country-specific parameters
 		if (!all.pars) {
 			pars <- svalue(e$par.cs.dl)
 			if(print.summary) {if (mc.exist) print(summary(mcmc.set, country=country.pars$code, par.names.cs=pars, par.names=NULL, 
 											burnin=params[['burnin']], thin=params[['thin']]))
 			} else 
-			tfr.partraces.cs.plot(sim.dir=params[['sim.dir']], country=country.pars$code, par.names=pars, 
-											nr.points=params[['nr.points']], 
-											burnin=params[['burnin']], thin=params[['thin']])
+			do.call(paste(type, '.partraces.cs.plot', sep=''), c(list(country=country.pars$code, par.names=pars), params))
 		} else {
 			if(print.summary){if (mc.exist) print(summary(mcmc.set, country=country.pars$code, par.names=NULL, 
 											burnin=params[['burnin']], thin=params[['thin']]))
 			} else 
-			tfr.partraces.cs.plot(sim.dir=params[['sim.dir']], country=country.pars$code, nr.points=params[['nr.points']], 
-											burnin=params[['burnin']], thin=params[['thin']])
+			do.call(paste(type, '.partraces.cs.plot', sep=''), c(list(country=country.pars$code), params))
 		}
 	} else { # World-parameters
 		if (!all.pars) { # selected pars
@@ -757,14 +786,12 @@ showParTraces <- function(h, ...) {
 			if(print.summary) {if (mc.exist) print(summary(mcmc.set, par.names.cs=NULL, par.names=pars, 
 											burnin=params[['burnin']], thin=params[['thin']]))
 			} else 
-			tfr.partraces.plot(sim.dir=params[['sim.dir']], par.names=pars, nr.points=params[['nr.points']], 
-											burnin=params[['burnin']], thin=params[['thin']])
+			do.call(paste(type, '.partraces.plot', sep=''), c(list(par.names=pars), params))
 		} else { # all pars
 			if(print.summary) {if (mc.exist) print(summary(mcmc.set, par.names.cs=NULL, 
 											burnin=params[['burnin']], thin=params[['thin']]))
 			} else 
-			tfr.partraces.plot(sim.dir=params[['sim.dir']], nr.points=params[['nr.points']], burnin=params[['burnin']], 
-									thin=params[['thin']])
+			do.call(paste(type, '.partraces.plot', sep=''), params)
 		}
 	}
 	if(print.summary) {
@@ -786,8 +813,7 @@ computeConvergenceDiag <- function(h, ...) {
 	params <- get.parameters(param.names, e, quote=h$action$script)
 	if(params$express || params$country.sampling.prop >= 1) params$country.sampling.prop <- NULL
 	if (h$action$script) {
-		cmd <- paste(type, '.diagnose(', assemble.arguments(params), ', ',
-					assemble.arguments(e$params), ')',sep='')
+		cmd <- paste(type, '.diagnose(', assemble.arguments(c(params, e$params)), ')',sep='')
 		create.script.widget(cmd, h$action$mw, package=h$action$package)
 	} else {
 		run <- FALSE
@@ -796,7 +822,7 @@ computeConvergenceDiag <- function(h, ...) {
 		if (iter < 0) gmessage('Number of iterations is smaller than burnin. Change the value of burnin.',
 							container=h$action$mw)
 		else {
-			if (iter > 10000) {
+			if (iter > 10000 && !params$express) {
 				gconfirm('Computing convergence diagnostics with these settings can take a very long time. Do you want to continue?',
 					icon='question', parent=h$action$mw,
 					handler=function(h1, ...) run <<- TRUE)

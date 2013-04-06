@@ -18,9 +18,9 @@ TFRrunMCMCgroup <- function(g, main.win, parent) {
 	enabled(e$iter) <- !enable 
 }
 
-.create.process.group <- function(g, e, defaults, show.buffer.size=TRUE) {
+.create.process.group <- function(g, e, defaults, show.buffer.size=TRUE, label='Process control') {
 	leftcenter <- c(-1,0)
-	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, spacing=10, container=g)
+	paral.g <- gframe(paste("<span color='blue'>", label, "</span>"), markup=TRUE, horizontal=TRUE, spacing=10, container=g)
 	pclo <- glayout(container=paral.g)
 	pclo[1,1] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose)
 	pclo[1,2, anchor=leftcenter] <- "Verbose iter:"
@@ -34,10 +34,11 @@ TFRrunMCMCgroup <- function(g, main.win, parent) {
 	}
 }
 
-.create.mcmc.process.group <- function(g, e, main.win, defaults, type='tfr', advance.settigs.function=mcmc.advance.settings) {
+.create.mcmc.process.group <- function(g, e, main.win, defaults, type='tfr', advance.settigs.function=mcmc.advance.settings,
+											mcmc.label='MCMC', process.label='Process control') {
 	leftcenter <- c(-1,0)
 	g2 <- ggroup(horizontal=TRUE, container=g)
-	mcmc.g <- gframe("<span color='blue'>MCMC</span>", markup=TRUE, horizontal=FALSE, spacing=10, container=g2)
+	mcmc.g <- gframe(paste("<span color='blue'>", mcmc.label, "</span>"), markup=TRUE, horizontal=FALSE, spacing=10, container=g2)
 	mclo <- glayout(container=mcmc.g)
 	e$run.prediction <- FALSE
 	mclo[1,1] <- e$run.auto <- gcheckbox("Auto simulation", checked=defaults$iter=='auto', container=mclo,
@@ -55,14 +56,15 @@ TFRrunMCMCgroup <- function(g, main.win, parent) {
 	mclo[3,4] <- e$seed <- gedit(defaults$seed, width=4)
 	mclo[4,1, anchor=leftcenter] <- glabel("File compression:")
 	mclo[4,2] <- e$compression.type <- bDem.gdroplist(c('None', 'xz', 'bz', 'gz'), container=mclo)
-	mclo[5,1:4] <- bDem.gbutton('  Advanced MCMC Settings  ',  handler=advance.settigs.function, 
+	mclo[5,1:4] <- bDem.gbutton('Priors & Advanced MCMC Settings',  handler=advance.settigs.function, 
 				action=list(mw=main.win, env=e))	
 	addSpring(g2)
-	.create.process.group(g2, e, defaults)
+	.create.process.group(g2, e, defaults, label=process.label)
 }
 mcmc.all.countries.group <- function(g, main.win, parent) {
 	e <- new.env()
 	defaults <- formals(run.tfr.mcmc) # default argument values
+	defaults3 <- formals(run.tfr3.mcmc)
 	e$output.dir <- parent$sim.dir
 	leftcenter <- c(-1,0)	
 	addSpace(g, 10)
@@ -83,12 +85,33 @@ mcmc.all.countries.group <- function(g, main.win, parent) {
 					  width=30, quote=FALSE, container=timelo)
 					  
 	addSpace(g, 10)
-	.create.mcmc.process.group(g, e, main.win, defaults)
+	phase.g <- gframe("", markup=TRUE, horizontal=FALSE, spacing=10, container=g)
+	phase.g1 <- ggroup(horizontal=TRUE, container=phase.g)
+	glabel("Run TFR MCMC for ", container=phase.g1)
+	e$mcmc.type <- gcheckboxgroup(c('Phase II', 'Phase III'), horizontal=TRUE, checked=TRUE, container=phase.g1,
+								handler=function(h,...){
+									enabled(phaseII.g) <- is.element(1, svalue(h$obj, index=TRUE))
+									enabled(phaseIII.g) <- is.element(2, svalue(h$obj, index=TRUE))
+								})
+	type.nb <- gnotebook(container=phase.g, expand=TRUE)
+	set.widget.bgcolor(type.nb, color.main)
+	set.widget.basecolor(type.nb, color.nb.inactive)
+	phaseII.g <- ggroup(label="<span color='darkred'>Phase II</span>", markup=TRUE, horizontal=FALSE, container=type.nb)
+	addSpace(phaseII.g, 10)
+	.create.mcmc.process.group(phaseII.g, e, main.win, defaults, mcmc.label="MCMC Phase II", process.label="Process control for Phase II")
+	#addSpace(g, 10)
+	phaseIII.g <- ggroup(label="<span color='darkred'>Phase III</span>", markup=TRUE, horizontal=FALSE, container=type.nb)
+	addSpace(phaseIII.g, 10)
+	e$phase3 <- new.env()
+	.create.mcmc.process.group(phaseIII.g, e$phase3, main.win, defaults3, type='tfr3', mcmc.label="MCMC Phase III", 
+								advance.settigs.function=mcmc3.advance.settings,
+								process.label="Process control for Phase III")
+	svalue(type.nb) <- 1
 	addSpace(g, 10)
 	.create.status.label(g, e)
 	addSpring(g)
 	adv.g <- ggroup(horizontal=TRUE, container=g)
-	create.help.button(topic=c('run.tfr.mcmc', 'bayesTFR-package'), package='bayesTFR', parent.group=adv.g,
+	create.help.button(topic=c('run.tfr.mcmc', 'run.tfr3.mcmc', 'bayesTFR-package'), package='bayesTFR', parent.group=adv.g,
 						parent.window=main.win)
 				
 	addSpring(adv.g)
@@ -108,20 +131,45 @@ mcmc.run <- function(h, ...) {
 									'present.year', 'seed', 'verbose.iter'),
 						text=c('output.dir', 'my.tfr.file', 'compression.type'),
 						logical=c('verbose', 'parallel'))
+	param.names.p3 <- list(numeric=c('buffer.size', 'nr.nodes', 'iter', 'thin', 'nr.chains', 'seed', 'verbose.iter'),
+						text=c('compression.type'),
+						logical=c('verbose', 'parallel'))
 	params <- get.parameters(param.names, e, quote=h$action$script)
+	params.p3 <- get.parameters(param.names.p3, e$phase3, quote=h$action$script)
 	params[['wpp.year']] <- h$action$wpp.year
+	params.p3[['my.tfr.file']] <- params[['my.tfr.file']]
 	
-	run.auto <- svalue(e$run.auto)
-	if (run.auto) {
-		params[['auto.conf']] <- e$auto.conf
-		op <- options("useFancyQuotes")
-		options(useFancyQuotes = FALSE)
-		params[['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
-		options(op)
+	mcmc.type <- svalue(e$mcmc.type, index=TRUE)
+	if(length(mcmc.type)<=0) {
+		gmessage('Eiter Phase II or Phase III must be checked.', title='Input Error', icon='error')
+		return()
 	}
-
+	envs <- list(e, e$phase3)
+	parlist <- list(params, params.p3)
+	auto <- list()
+	for(i in 1:2) {
+		auto[[i]] <- list()
+		auto[[i]]$run.auto <- FALSE
+		if(!is.element(i, mcmc.type)) next
+		auto[[i]]$run.auto <- svalue(envs[[i]]$run.auto)
+		if (auto[[i]]$run.auto) {
+			parlist[[i]][['auto.conf']] <- envs[[i]]$auto.conf
+			op <- options("useFancyQuotes")
+			options(useFancyQuotes = FALSE)
+			parlist[[i]][['iter']] <- if (h$action$script) sQuote('auto') else 'auto'
+			options(op)
+		}
+	}
 	outdir <- get.parameters(list(text='output.dir'), e, quote=FALSE)$output.dir # to avoid double quoting if script is TRUE
-	if(file.exists(outdir) && (length(list.files(outdir)) > 0)) {
+	if(!is.element(1, mcmc.type)) {
+		m <- get.tfr.mcmc(outdir)
+		if(is.null(m)) {
+			gmessage('Simulation directory contains no valid MCMC results. Phase II must be run before phase III.', 
+							title='Input Error', icon='error')
+			return()
+		}
+	}
+	if(file.exists(outdir) && (length(list.files(outdir)) > 0) && is.element(1, mcmc.type)) {
 		params[['replace.output']] <- FALSE
 		if (gconfirm(paste('Non-empty directory', outdir, 
 								'already exists.\nDo you want to overwrite existing results?'),
@@ -129,31 +177,54 @@ mcmc.run <- function(h, ...) {
 			params[['replace.output']] <- TRUE
 		else return(NULL)
 	}
-
+	run.prediction <- (auto[[1]]$run.auto || auto[[2]]$run.auto) && (e$run.prediction || e$phase3$run.prediction)
+	use.diag <- if(auto[[1]]$run.auto && e$run.prediction) 'TRUE' else 'FALSE'
 	if (h$action$script) {
-		commands <- paste('m <- run.tfr.mcmc(', assemble.arguments(c(params, e$params)), ')', sep=' ')
-		if(run.auto && e$run.prediction) 
-			commands <- paste(commands, '\n\ntfr.predict(m, use.diagnostics=TRUE)', sep='')
+		commands <- ''
+		if(is.element(1, mcmc.type)) 
+			commands <- paste(commands, 'm <- run.tfr.mcmc(', assemble.arguments(c(parlist[[1]], e$params)), ')', sep=' ')
+		if(is.element(2, mcmc.type)) 
+			commands <- paste(commands, '\n\nm3 <- run.tfr3.mcmc(', parlist[[1]]$output.dir, ', ', 
+									assemble.arguments(c(parlist[[2]], e$phase3$params)), ')', sep=' ')
+		if(run.prediction) 
+			commands <- paste(commands, '\n\ntfr.predict(sim.dir=,', parlist[[1]]$output.dir, 
+							', use.diagnostics=',use.diag, ', replace.output=TRUE)', sep='')
 		create.script.widget(commands, h$action$mw, package="bayesTFR")
-	} else {
+	} else { # run a simulation
 		run <- FALSE
-		if ((params[['iter']] == 'auto' && ((!is.null(params[['auto.conf']]) 
-				&& params[['auto.conf']]$iter > 100) || is.null(params[['auto.conf']]))) 
-					|| (params[['iter']] != 'auto' && params[['iter']] > 100)) {
+		long.run <- FALSE
+		for (i in 1:2) {
+			if (is.element(i, mcmc.type) && ((parlist[[i]][['iter']] == 'auto' && ((!is.null(parlist[[i]][['auto.conf']]) 
+				&& parlist[[i]][['auto.conf']]$iter > 100) || is.null(parlist[[i]][['auto.conf']]))) 
+					|| (parlist[[i]][['iter']] != 'auto' && parlist[[i]][['iter']] > 100))) {
+						long.run <- TRUE
+						break
+			}
+		}
+		if(long.run) {
 			gconfirm('Running MCMC with these settings can take a very long time. Do you want to continue?',
 					icon='question', parent=h$action$mw,
 					handler=function(h, ...) run <<- TRUE)
 		} else run <- TRUE
 		if(run) {
-			if(file.exists(params[['output.dir']])) unlink(params[['output.dir']], recursive=TRUE)
-			m <- .run.simulation(e, handler=get.tfr.simulation.status, option='bDem.TFRmcmc', 
-								call='run.tfr.mcmc', params=c(params, e$params), 
-								sim.name='TFR MCMC simulation', main.win=h$action$mw,
+			if(is.element(1, mcmc.type)) { # run phase II MCMCs
+				if(file.exists(params[['output.dir']])) unlink(params[['output.dir']], recursive=TRUE)
+				m <- .run.simulation(e, handler=get.tfr.simulation.status, option='bDem.TFRmcmc', 
+								call='run.tfr.mcmc', params=parlist[[1]], 
+								sim.name='TFR MCMC Phase II', main.win=h$action$mw,
 								action=list(sb=e$statuslabel, sim.dir=params[['output.dir']]),
 								interval=5000)
-			if(run.auto && e$run.prediction) {
+			} 
+			if(is.element(2, mcmc.type)) {
+				m3 <- .run.simulation(e, handler=get.tfr.simulation.status, option='bDem.TFRmcmc', 
+								call='run.tfr3.mcmc', params=c(list(sim.dir=params[['output.dir']]), parlist[[2]]), 
+								sim.name='TFR MCMC Phase III', main.win=h$action$mw,
+								action=list(sb=e$statuslabel, sim.dir=params[['output.dir']]),
+								interval=5000)
+			}
+			if(run.prediction) {
 				.run.prediction(e, handler=get.tfr.prediction.status, option='bDem.TFRpred', 
-								call='tfr.predict', params=list(m, use.diagnostics=TRUE), 
+								call='tfr.predict', params=list(sim.dir=params[['output.dir']], use.diagnostics=eval(use.diag), replace.output=TRUE), 
 								sim.name='TFR prediction', main.win=h$action$mw,
 								action=list(sb=e$statuslabel),
 								interval=1000)
@@ -210,7 +281,7 @@ configure.auto.run <- function(h, ...) {
 		defaults <- eval(formals(paste("run.", type, ".mcmc", sep=''))$auto.conf)
 	else {
 		defaults <- do.call(paste('.get.defaults.for.auto.cont.', type, sep=''), list(h$action$env))
-		if(is.null(defaults)) defaults <- eval(formals(paste("run.", type, ".mcmc", sep=''))$auto.conf)
+		if(is.null(defaults)) return()
 	}
 	set.defaults <- function(h2, ...) {
 		for (par in names(defaults)) {
@@ -685,7 +756,7 @@ mcmc.run.extra <- function(h, ...) {
 }
 
 get.wpp.years <- function() {
-	pkg.data.dir <- file.path(.find.package("bayesTFR"), "data")
+	pkg.data.dir <- file.path(find.package("bayesTFR"), "data")
 	files <- list.files(pkg.data.dir)
 	#filter UNx.txt files
 	un.files <- grep('^UN[0-9]{4}.txt$', files, value=TRUE)
@@ -783,4 +854,207 @@ multiSelectCountryMenu <- function(h, ...) {
 		removehandler(h$action$env$sel.extra.country.okbutton, h$action$env$sel.extra.country.ok.handler)
 	h$action$env$sel.extra.country.ok.handler <- addhandlerclicked(
 						h$action$env$sel.extra.country.okbutton, handler=country.selected)
+}
+
+mcmc3.advance.settings <- function(h, ...) {
+	base.par.names <- c('mu', 'rho', 'sigma.mu', 'sigma.rho', 'sigma.eps')
+	param.names <- c(paste(base.par.names, 'ini', sep='.'), 
+					paste(base.par.names, 'ini.low', sep='.'),
+					paste(base.par.names, 'ini.up', sep='.'),
+					paste(base.par.names, 'prior.low', sep='.'),
+					paste(base.par.names, 'prior.up', sep='.'))
+
+	get.defaults <- function() {
+		all.defaults <- formals(run.tfr3.mcmc) # default argument values
+		defaults <- list()
+		for (par in param.names) {
+			if(is.element(par, names(all.defaults)))
+				defaults[[par]] <- eval(all.defaults[[par]])
+		}
+		for(par in base.par.names) {
+			defaults[[paste(par, 'ini.low', sep='.')]] <- eval(all.defaults[[paste(par, 'prior.range', sep='.')]])[1]
+			defaults[[paste(par, 'ini.up', sep='.')]] <- eval(all.defaults[[paste(par, 'prior.range', sep='.')]])[2]
+			defaults[[paste(par, 'prior.low', sep='.')]] <- eval(all.defaults[[paste(par, 'prior.range', sep='.')]])[1]
+			defaults[[paste(par, 'prior.up', sep='.')]] <- eval(all.defaults[[paste(par, 'prior.range', sep='.')]])[2]
+		}
+		return(defaults)
+	}
+
+	set.defaults <- function(h2, ...) {
+		defaults <- get.defaults()
+		for (par in param.names) {
+			if(!is.null(h$action$env$adv.set.env[[par]])) {
+				if(length(defaults[[par]])>1) {
+					for (i in 1:length(defaults[[par]])) svalue(h$action$env$adv.set.env[[par]][[i]]) <- defaults[[par]][i]
+				} else 
+					svalue(h$action$env$adv.set.env[[par]]) <- defaults[[par]]
+			}
+		}
+		widget.defaults <- h$action$env$adv.set.env$widget.defaults
+		for (par in names(widget.defaults)) {
+			if(length(widget.defaults[[par]])>1) {
+				for (i in 1:length(widget.defaults[[par]])) svalue(h$action$env$adv.set.env[[par]][[i]]) <- widget.defaults[[par]][i]
+			} else svalue(h$action$env$adv.set.env[[par]]) <- widget.defaults[[par]]
+		}
+	}
+	
+	set.advance.pars <- function(h2, ...) {
+		# The order in which the widgets are handled must be the same as in function init.widget.value.pairs.
+		params <- widget.value <- list()
+		counter <- 1		
+		linked.pars.list <- h$action$env$adv.set.env$linked.pars.list
+		for(par in names(linked.pars.list)) {
+			if(is.list(linked.pars.list[[par]])) {
+				for(i in 1:length(linked.pars.list[[par]])) {
+					value <- svalue(linked.pars.list[[par]][[i]])
+					params[[par]] <- c(params[[par]], if(nchar(value)==0) NULL else as.numeric(value))
+					h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+					#widget.value <- c(widget.value, list(c(linked.pars.list[[par]][[i]], value)))
+					counter <- counter + 1
+				} 
+			} else {
+				value <- svalue(linked.pars.list[[par]])
+				params[[par]] <- if(nchar(value)==0) NULL else as.numeric(value)
+				h$action$env$adv.set.env$widget.value.pairs[[counter]][[2]] <- value
+				counter <- counter + 1
+				#widget.value <- c(widget.value, list(c(linked.pars.list[[par]], value)))
+			}
+		}
+		h$action$env$params <- params
+		#h$action$env$adv.set.env$widget.value.pairs <- widget.value
+		visible(h$action$env$adv.set.win) <- FALSE
+	}
+	
+	init.widget.value.pairs <- function(e) {
+		# The order in which the widgets are handled must be the same as in function set.advance.pars.
+		widget.value <- list()		
+
+		for(par in names(e$linked.pars.list)) {
+			if(is.list(e$linked.pars.list[[par]])) {
+				for(i in 1:length(e$linked.pars.list[[par]])) 
+					widget.value <- c(widget.value, list(c(e$linked.pars.list[[par]][[i]], 0)))
+			} else {
+				widget.value <- c(widget.value, list(c(e$linked.pars.list[[par]], 0)))
+			}
+		}
+		e$widget.value.pairs <- widget.value
+	}
+
+		
+	if (!is.null(h$action$env$adv.set.win) && !h$action$env$adv.set.env$window.destroyed) { #Advanced Parameters window exists
+		if(!is.null(h$action$env$params)) { # OK button previously clicked 
+			for (i in 1:length(h$action$env$adv.set.env$widget.value.pairs)) 
+				svalue(h$action$env$adv.set.env$widget.value.pairs[[i]][[1]]) <- h$action$env$adv.set.env$widget.value.pairs[[i]][[2]]
+		} else { # OK button not clicked yet, values are set to defaults
+			#for (par in param.names) {
+			#	svalue(h$action$env$adv.set.env[[par]]) <- h$action$env$adv.set.env$defaults[[par]]
+			#}
+			set.defaults(h)
+		}
+		visible(h$action$env$adv.set.win) <- TRUE
+	} else { # create the Advanced Parameters window
+		h$action$env$adv.set.win <- adv.set.win <- bDem.gwindow('Settings for Bayesian Hierarchical Model Phase III TFR',
+						parent=h$action$mw, visible=FALSE,
+						handler=function(h, ...) {
+							h$action$env$adv.set.okhandler <- NULL
+						})
+		e <- new.env()
+		e$defaults <- defaults <- get.defaults()
+		e$adv.g <- ggroup(container=adv.set.win, horizontal=FALSE)
+	
+	linked.pars.list <-  widget.defaults <- list()
+
+	priors.f <- gframe("<span color='blue'>Uniform prior parameters and initial values</span>", markup=TRUE, 
+						container=e$adv.g, horizontal=FALSE)
+	uni.g <- ggroup(horizontal=TRUE, container=priors.f)
+	uni.flo <- glayout(container=uni.g)
+	
+	l <- 1 # row 1
+	uni.flo[l,1] <- ''
+	uni.flo[l,2] <- '   prior\nlower b.'
+	uni.flo[l,3] <- '   prior\nupper b.'
+	uni.flo[l,4] <- ' init\nlower'
+	uni.flo[l,5] <- ' init\nupper'
+	uni.flo[l,6] <- 'init values'
+	lower <- c(defaults$mu.ini.low, defaults$rho.ini.low, defaults$sigma.mu.ini.low, 
+					defaults$sigma.rho.ini.low,defaults$sigma.eps.ini.low)
+	upper <- c(defaults$mu.ini.up, defaults$rho.ini.up, defaults$sigma.mu.ini.up, 
+					defaults$sigma.rho.ini.up,defaults$sigma.eps.ini.up)
+	ini <- c(defaults$mu.ini, defaults$rho.ini, defaults$sigma.mu.ini, 
+					defaults$sigma.rho.ini,defaults$sigma.eps.ini)
+	prior.low <- c(defaults$mu.prior.low, defaults$rho.prior.low, defaults$sigma.mu.prior.low, 
+					defaults$sigma.rho.prior.low,defaults$sigma.eps.prior.low)
+	prior.up <- c(defaults$mu.prior.up, defaults$rho.prior.up, defaults$sigma.mu.prior.up, 
+					defaults$sigma.rho.prior.up,defaults$sigma.eps.prior.up)
+
+	e$lower <- e$upper <- e$prior.low <- e$prior.up <-e$init <- NULL
+	labels <- paste('<span>', c('mu', 'rho', 'sigma<sub>mu</sub>', 'sigma<sub>rho</sub>', 'sigma<sub>eps</sub>'), ':</span>', sep='')
+	for (i in 1:5) {
+		row <- l + i
+		uni.flo[row,1] <- glabel(labels[i], markup=TRUE, container=uni.flo)
+		e$prior.low <- c(e$prior.low, uni.flo[row,2] <- gedit(prior.low[i], width=5, container=uni.flo))
+		e$prior.up <- c(e$prior.up, uni.flo[row,3] <- gedit(prior.up[i], width=5, container=uni.flo))
+		e$lower <- c(e$lower, uni.flo[row,4] <- gedit(lower[i], width=5, container=uni.flo))
+		e$upper <- c(e$upper, uni.flo[row,5] <-  gedit(upper[i], width=5, container=uni.flo))
+		e$init  <- c(e$init, uni.flo[row,6] <- gedit(ini[i], width=10, container=uni.flo))
+		addHandlerChanged(e$init[[i]], action=list(idx=i), handler=function(h1,...) {
+						isempty <- nchar(svalue(e$init[[h1$action$idx]]))==0
+						enabled(e$lower[[h1$action$idx]]) <- isempty
+						enabled(e$upper[[h1$action$idx]]) <- isempty
+						})
+	}
+	widget.defaults[['prior.low']] <- prior.low
+	widget.defaults[['prior.up']] <- prior.up
+	widget.defaults[['lower']] <- lower
+	widget.defaults[['upper']] <- upper
+	widget.defaults[['init']] <- if(is.null(ini)) rep('', 5) else ini
+	
+	ipar <- 1
+	for(par in base.par.names) {
+		linked.pars.list[[paste(par, 'ini', sep='.')]] <- e$init[[ipar]]
+		linked.pars.list[[paste(par, 'ini.range', sep='.')]] <- c(e$lower[[ipar]], e$upper[[ipar]])
+		linked.pars.list[[paste(par, 'prior.range', sep='.')]] <- c(e$prior.low[[ipar]], e$prior.up[[ipar]])
+		ipar <- ipar+1
+	}		
+
+	addSpring(priors.f)
+	info.ini.group <- ggroup(horizontal=FALSE, container=priors.f)
+	glabel('NOTE:', container=info.ini.group, anchor=c(-1,0))
+	glabel('Leave "init values" blank for the starting values being equally', container=info.ini.group, anchor=c(-1,0))
+	glabel('distributed between "init lower" and "init upper". For specific', container=info.ini.group, anchor=c(-1,0))
+	glabel('initial values enter one value per chain separated by commas.', container=info.ini.group, anchor=c(-1,0))
+	
+	# Buttons
+	button.g <- ggroup(container=e$adv.g, horizontal=TRUE)
+	bDem.gbutton('Cancel', container=button.g, handler=function(h, ...) 
+					visible(adv.set.win) <- FALSE)
+	addSpring(button.g)
+	e$adv.set.defaultbutton <- bDem.gbutton(action=gaction('  Set to Default Values  ', icon='refresh', handler=set.defaults),
+										container=button.g)
+	e$adv.set.okbutton <- bDem.gbutton('OK', container=button.g)
+	
+	e$linked.pars.list <- linked.pars.list
+	e$widget.defaults <- widget.defaults
+	init.widget.value.pairs(e)
+	
+		if(!is.null(h$action$env$params)) { # OK button previously clicked 
+			for (i in 1:length(h$action$env$adv.set.env$widget.value.pairs)) {
+				svalue(e$widget.value.pairs[[i]][[1]]) <- h$action$env$adv.set.env$widget.value.pairs[[i]][[2]]
+				e$widget.value.pairs[[i]][[2]] <- h$action$env$adv.set.env$widget.value.pairs[[i]][[2]]
+			}
+		} 
+		
+	visible(adv.set.win) <- TRUE
+	e$window.destroyed <- FALSE
+	h$action$env$adv.set.env <- e
+	
+	addHandlerDestroy(adv.set.win, 
+					handler=function(h1, ...) h$action$env$adv.set.env$window.destroyed <- TRUE)
+	
+	}
+	if(!is.null(h$action$env$adv.set.okhandler)) 
+		removehandler(h$action$env$adv.set.env$adv.set.okbutton, h$action$env$adv.set.okhandler)
+	h$action$env$adv.set.okhandler <- addhandlerclicked(h$action$env$adv.set.env$adv.set.okbutton, 
+											handler=set.advance.pars)
+
 }
