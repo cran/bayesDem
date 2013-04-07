@@ -7,29 +7,7 @@ e0ContinueMCMCgroup <- function(g, main.win, parent=NULL) {
 	#auto.g <- ggroup(horizontal=TRUE, container=mcmc.g)
 	e$run.prediction <- FALSE
 	addSpace(g, 10)
-	g2 <- ggroup(horizontal=TRUE, container=g)
-	.create.autoconf.cont.group(g2, e, main.win, defaults)
-	# e$run.auto <- gcheckbox("Auto simulation", checked=FALSE, 
-							# container=auto.g, handler=function(h,...){.enable.auto.cont(svalue(h$obj), e)})
-	# e$auto.conf.b <- gbutton(' Configure auto run ', container=auto.g, handler=configure.auto.run, 
-				# action=list(mw=main.win, env=e, cont.run=TRUE))
-	# #enabled(e$run.auto) <- FALSE
-	# #enabled(e$auto.conf.b) <- FALSE
-	# iter.g <- ggroup(horizontal=TRUE, container=mcmc.g)
-	# glabel("Number of iterations:", container=iter.g)
-	# glabel("<span color='red'>*</span>", markup=TRUE, container=iter.g)
-	# e$iter <- gedit(defaults$iter, width=7, container=iter.g)
-	# glabel("Chain ids:", container=iter.g)
-	# e$chain.ids <- gedit(defaults$chain.ids, width=10, container=iter.g)
-	# .enable.auto.cont(FALSE, e)
-	.create.process.group(g2, e, defaults, show.buffer.size=FALSE)
-	# paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE,
-					 # horizontal=TRUE, container=g)
-	# e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=paral.g)
-	# addSpace(paral.g, 5)
-	# e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=paral.g)
-	# glabel("  Number of nodes:", container=paral.g)
-	# e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=paral.g)
+	.create.cont.mcmc.process.group(g, e, main.win, defaults, type='e0')
 	addSpace(g, 10)
 	.create.status.label(g, e)
 	addSpring(g)

@@ -187,7 +187,7 @@ e0mcmc.advance.settings <- function(h, ...) {
 					'omega.ini.low', 'omega.ini.up',
 					'Triangle.c.prior.low', 'Triangle.c.prior.up',
 					'k.c.prior.low', 'z.c.prior.low', 'k.c.prior.up', 'z.c.prior.up',
-					'Triangle.c.width', 'k.c.width', 'z.c.width', 'nu', 'dl.p1', 'dl.p2'
+					 'nu', 'dl.p1', 'dl.p2'
 						)
 	get.defaults <- function() {
 		all.defaults <- formals(run.e0.mcmc) # default argument values
@@ -417,7 +417,6 @@ e0mcmc.advance.settings <- function(h, ...) {
 	nini.flo[l,3] <- '   prior\nupper b.'
 	nini.flo[l,4] <- ' init\nmean'
 	nini.flo[l,5] <- 'init\n sd'
-	nini.flo[l,6] <- 'width'
 
 	prior.c.low <- c(defaults$Triangle.c.prior.low, defaults$k.c.prior.low, defaults$z.c.prior.low)
 	prior.c.up <- c(defaults$Triangle.c.prior.up, defaults$k.c.prior.up, defaults$z.c.prior.up)
@@ -425,8 +424,7 @@ e0mcmc.advance.settings <- function(h, ...) {
 					defaults$k.c.ini.norm[1], defaults$z.c.ini.norm[1])
 	ini.c.sd <- c(defaults$Triangle.c.ini.norm[[2]], 
 					defaults$k.c.ini.norm[2], defaults$z.c.ini.norm[2])
-	c.width <- c(defaults$Triangle.c.width, defaults$k.c.width, defaults$z.c.width)
-	e$c.low <- e$c.up <- e$c.means <- e$c.sd <- e$c.width <- NULL
+	e$c.low <- e$c.up <- e$c.means <- e$c.sd <- NULL
 	c.labels <- paste('<span>', c(paste('Triangle<sup>c</sup><sub>', 1:4, '</sub>', sep=''), 
 						'k<sup>c</sup>', 'z<sup>c</sup>'), ':</span>', sep='')
 	for (i in 1:6) {
@@ -436,13 +434,11 @@ e0mcmc.advance.settings <- function(h, ...) {
 		e$c.up <- c(e$c.up, nini.flo[row,3] <- gedit(prior.c.up[i], width=5, container=nini.flo))
 		e$c.means <- c(e$c.means, nini.flo[row,4] <- gedit(ini.c.means[i], width=5, container=nini.flo))
 		e$c.sd <- c(e$c.sd, nini.flo[row,5] <- gedit(ini.c.sd[i], width=5, container=nini.flo))
-		e$c.width <- c(e$c.width, nini.flo[row,6] <- gedit(c.width[i], width=5, container=nini.flo))
 	}
 	widget.defaults[['c.low']] <- prior.c.low
 	widget.defaults[['c.up']] <- prior.c.up
 	widget.defaults[['c.means']] <- ini.c.means
 	widget.defaults[['c.sd']] <- ini.c.sd
-	widget.defaults[['c.width']] <- c.width
 
 	linked.pars.list[['Triangle.c.prior.low']] <- e$c.low[1:4]
 	linked.pars.list[['Triangle.c.prior.up']] <- e$c.up[1:4]
@@ -453,9 +449,6 @@ e0mcmc.advance.settings <- function(h, ...) {
 	linked.pars.tuple[['Triangle.c.ini.norm']] <- list(e$c.means[1:4], e$c.sd[1:4])
 	linked.pars.tuple[['k.c.ini.norm']] <- c(e$c.means[[5]], e$c.sd[[5]])
 	linked.pars.tuple[['z.c.ini.norm']] <- c(e$c.means[[6]], e$c.sd[[6]])
-	linked.pars.list[['Triangle.c.width']] <-  e$c.width[1:4]
-	linked.pars.list[['k.c.width']] <-  e$c.width[[5]]
-	linked.pars.list[['z.c.width']] <-  e$c.width[[6]]
 
 	gamma.uniform.g <- ggroup(horizontal=TRUE, container=priors.f)
 	priors.gamma.f <- gframe("<span  color='#0B6138'>Gamma priors</span>", markup=TRUE, container=gamma.uniform.g,

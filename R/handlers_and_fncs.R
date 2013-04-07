@@ -171,23 +171,28 @@ show.summary <- function(h, ...) {
 	type <- h$action$type
 	warn <- getOption('warn')
 	options(warn=-1) # disable warning messages
+	mcmc.sets <- list()
 	if(!h$action$no.mcmc) {
-		mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(dir))
+		for(ityp in 1:length(type)) {
+			mcmc.sets[[ityp]] <- do.call(paste('get.', type[ityp], '.mcmc', sep=''), list(dir))
+		}
 	} 
 	# get prediction
-	pred <- do.call(paste('get.', type, '.prediction', sep=''), list(sim.dir=dir))
+	pred <- do.call(paste('get.', type[1], '.prediction', sep=''), list(sim.dir=dir))
 	options(warn=warn)
 	info <- c()
 	con <- textConnection("info", "w", local=TRUE)
 	sink(con)
 	if(!h$action$no.mcmc) {
-		if (is.null(mcmc.set)) {
+		if (is.null(mcmc.sets[[1]])) {
 			cat('No simulation available in this directory.')
 		} else { 
 			cat('Simulation results\n')
 			cat('********************\n')
-			print(summary(mcmc.set, meta.only=TRUE))
-			cat('===============================\n')
+			for(i in 1:length(mcmc.sets)) {
+				print(summary(mcmc.sets[[i]], meta.only=TRUE))
+				cat('===============================\n')
+			}
 		}
 	}
 	if (is.null(pred)) {
@@ -303,7 +308,7 @@ get.data.path <- function(type) {
 	if(type=='tfr') package <- 'bayesTFR'
 	else{if(type=='e0') package <- 'bayesLife'}
 	if(is.null(package)) stop('Wrong type ', type, '. Only "tfr" and "e0" allowed.')
-	return(file.path(.find.package(package), "data"))
+	return(file.path(find.package(package), "data"))
 }
 
 get.tfr.UN.data <- function(type, mcmc.set) {

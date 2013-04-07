@@ -1,3 +1,11 @@
+2.2-1 (04/06/2013)
+-----
+.find.package replaced by find.package.
+
+2.2-0 (02/16/2013)
+-----
+Phase III stuff added to TFR tabs. 
+
 2.1-1 (12/19/2012)
 -----
 Compression entry added to TFR and e0 MCMCs.

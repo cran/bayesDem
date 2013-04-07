@@ -20,15 +20,34 @@ tfr.pred.all.countries.group <- function(g, main.win, parent) {
 	addSpace(g, 10)
 	.create.prediction.setting.group(g, e, defaults)
 	addSpace(g, 10)
-	ar.g <- gframe("<span color='blue'>AR(1) Process</span>", markup=TRUE, horizontal=TRUE, container=g)
-	glabel("mu:", container=ar.g)
-	e$mu <- gedit(defaults$mu, width=10, container=ar.g)
+	ar.g <- gframe("<span color='blue'>Phase III Model</span>", markup=TRUE, horizontal=FALSE, container=g)
+	p3.g1 <- ggroup(horizontal=TRUE, container=ar.g)
+	glabel("Phase III modeled using ", container=p3.g1)
+	e$p3.type <- gradio(c('BHM', 'Classic AR(1)'), horizontal=TRUE, container=p3.g1,
+								handler=function(h,...){
+									val <- svalue(h$obj, index=TRUE)
+									enabled(p3.g2a) <- val == 1
+									enabled(p3.g2b) <- val == 2
+								})
 	addSpace(ar.g, 10)
-	glabel("rho:", container=ar.g)
-	e$rho <- gedit(defaults$rho, width=10, container=ar.g)
-	addSpace(ar.g, 10)
-	glabel("sigma:", container=ar.g)
-	e$sigmaAR1 <- gedit(defaults$sigmaAR1, width=10, container=ar.g)
+	p3.g2 <- ggroup(horizontal=TRUE, container=ar.g)
+	p3.g2a <- ggroup(horizontal=TRUE, container=p3.g2)
+	glabel("Burnin:", container=p3.g2a)
+	e$burnin3 <- gedit(defaults$burnin3, width=10, container=p3.g2a)
+	addSpace(p3.g2, 10)
+	p3.g2b <- ggroup(horizontal=FALSE, container=p3.g2)
+	p3.g2b1 <- ggroup(horizontal=TRUE, container=p3.g2b)
+	glabel("mu:", container=p3.g2b1)
+	e$mu <- gedit(defaults$mu, width=10, container=p3.g2b1)
+	addSpace(p3.g2b1, 10)
+	glabel("rho:<sup>*</sup>", markup=TRUE, container=p3.g2b1)
+	e$rho <- gedit(defaults$rho, width=10, container=p3.g2b1)
+	addSpace(p3.g2b1, 10)
+	glabel("sigma:<sup>*</sup>", markup=TRUE, container=p3.g2b1)
+	e$sigmaAR1 <- gedit(defaults$sigmaAR1, width=10, container=p3.g2b1)
+	p3.g2b2 <- ggroup(horizontal=TRUE, container=p3.g2b)
+	glabel('<sup>*</sup>If left blank values are re-estimated from the data.', markup=TRUE, container=p3.g2b2)
+	enabled(p3.g2b) <- FALSE
 	addSpace(g, 10)
 	.create.status.label(g, e)
 	addSpring(g)
@@ -83,15 +102,21 @@ run.tfr.prediction <- function(h, ...)
 	e <- h$action$env
 	if(!has.required.arguments(list(sim.dir='Simulation directory',
 									end.year='End year', burnin='Burnin'), env=e)) return()
-	param.names <- list(numeric=c('mu', 'rho', 'end.year', 'burnin', 'seed', 'nr.traj', 'thin'), 
+	param.names <- list(numeric=c('mu', 'rho', 'end.year', 'burnin', 'seed', 'nr.traj', 'thin', 'burnin3'), 
 						numvector=c('sigmaAR1'),
 						text=c('sim.dir'),
 						logical=c('verbose', 'use.diagnostics'),
 						numtext=c('save.as.ascii') #can be both - numeric or text
 						)
 	params <- get.parameters(param.names, e, h$action$script)
-	if(is.null(params$rho)) params$rho <- NA
-	if(is.null(params$sigmaAR1)) params$sigmaAR1 <- NA
+	params[['use.tfr3']] <- svalue(e$p3.type, index=TRUE)==1
+	if(params$use.tfr3) 
+		params$rho <- params$sigmaAR1 <- params$mu <- NULL
+	else {
+		if(is.null(params$rho)) params$rho <- NA
+		if(is.null(params$sigmaAR1)) params$sigmaAR1 <- NA
+		params$burnin3 <- NULL
+	}
 	if(params$use.diagnostics) {
 		params[['burnin']] <- NULL
 		params[['thin']] <- NULL
