@@ -59,6 +59,7 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 							e$set.country.to.null <- use.expr
 							})
 	exp.g[l+1,2:3] <- e$expression <- gedit('', container=exp.g, fill=TRUE, expand=TRUE)
+	tooltip(e$expression) <- "See ?pop.expressions. Use XXX as country code if 'All countries' is checked."
 	enabled(e$expression) <- FALSE
 	addSpace(g, 10)
 	
@@ -77,13 +78,13 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 	lo[4,1:2] <- e$plot.by.age <- gcheckbox("Plot by age", container=lo, checked=FALSE,
 							handler=function(h,...){
 								by.age <- svalue(h$obj)
-								enabled(e$sum.over.ages) <- !by.age
-								enabled(e$age.gb) <- !by.age
+								enabled(e$sum.over.ages) <- !by.age && !svalue(e$expression)
+								enabled(e$age.gb) <- !by.age && !svalue(e$expression)
 								enabled(e$start.year) <- !by.age
 								enabled(e$end.year) <- !by.age
 								enabled(e$year) <- by.age
 								if(by.age) enabled(e$TableB.show.traj) <- TRUE
-								else enabled(e$TableB.show.traj) <- e$sum.over.ages 
+								else enabled(e$TableB.show.traj) <- svalue(e$sum.over.ages)
 								})
 	lo[4,3, anchor=leftcenter] <- glabel('Year:', container=lo)
 	lo[4,4] <- e$year <- gedit('', width=4, container=lo)
@@ -96,7 +97,7 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 	e$graph.pars <- create.graph.pars.widgets(graph.f, main.win=main.win)
 	addSpring(g)
 	button.g <- ggroup(horizontal=TRUE, container=g)
-	create.help.button(topic='pop.trajectories.plot', package='bayesPop', parent.group=button.g,
+	create.help.button(topic=c('pop.trajectories.plot', 'pop.expressions'), package='bayesPop', parent.group=button.g,
 						parent.window=main.win)
 	addSpring(button.g)
 	create.generate.script.button(handler=show.e0.traj, 
@@ -214,14 +215,17 @@ pop.show.pyramid.group <- function(g, main.win, parent.env) {
 	type.g1[2,4] <- e$nr.traj <- gedit(20, width=5, container=type.g1)
 	type.g1[3,3, anchor=leftcenter] <- glabel('Highest age category:', container=type.g1)
 	type.g1[3,4] <- e$age <- gedit(defaults.pyr$age[length(defaults.pyr$age)], width=3, container=type.g1)
+	tooltip(e$age) <- "21: 100-104, ..., 27: 130+"
 	type.g1[2,5] <- year.gb <- bDem.gbutton(" Years ", container=type.g1,
 				handler=selectYearsMenuPop,
 				action=list(mw=main.win, env=e, widget='year', multiple=TRUE))
-	type.g1[2,6] <- e$year <- gedit(defaults.pred$present.year, width=10, container=type.g1)	
+	type.g1[2,6] <- e$year <- gedit(defaults.pred$present.year, width=10, container=type.g1)
+	tooltip(e$year) <- "There will be one plot per year."
 	type.g1[3,5] <- year.comp.gb <- bDem.gbutton(" Additional years ", container=type.g1,
 				handler=selectYearsMenuPop,
 				action=list(mw=main.win, env=e, widget='year.comp', multiple=TRUE))
 	type.g1[3,6] <- e$year.comp <- gedit('', width=10, container=type.g1)
+	tooltip(e$year.comp) <- "All will be shown in the same plot."
 	enabled(e$nr.traj) <- svalue(e$is.traj.pyr)
 	addSpring(g)
 	button.g <- ggroup(horizontal=TRUE, container=g)
@@ -456,6 +460,7 @@ pop.show.map.group <- function(g, main.win, parent.env) {
 	lo[4,5, anchor=leftcenter] <- e$age.label <- glabel('', container=lo)
 	lo[5, 1, anchor=leftcenter] <- "Expression:"
 	lo[5, 2:5] <- e$expression <- gedit('', container=lo)
+	tooltip(e$expression) <- "See ?pop.expressions. Use XXX as country code."
 	addHandlerChanged(e$map.measure, function(h, ...) {
 					is.expression <- svalue(h$obj) == 'Expression'
 					enabled(e$expression) <- is.expression

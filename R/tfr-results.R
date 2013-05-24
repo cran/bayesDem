@@ -1,9 +1,6 @@
 TFRresults.group <- function(g, main.win, parent) {
 	e <- new.env()
-	
-	#e$country.table <- get.table.of.countries(file.path(find.package("bayesTFR"), "data", 
-	#						paste('WPP', parent$wpp.year, '_LOCATIONS', '.csv', sep='')))
-							
+								
 	e$sim.dir <- parent$sim.dir
 	graph.defaults <- formals(png)
 	mcmc.defaults <- formals(run.tfr.mcmc)

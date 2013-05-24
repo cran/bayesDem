@@ -123,7 +123,7 @@ create.script.widget <- function(script, parent, package) {
 	gt <- gtext("", container=script.widget)
 	insert(gt, script)
 	#gtext(script, container=script.widget)
-	addHandlerFocus(script.widget, handler=function(h, ...) focus(h$obj) <- TRUE)
+	addHandlerFocus(script.widget, handler=function(h, ...) focus(gt) <- TRUE)
 	visible(script.widget) <- TRUE
 	focus(script.widget) <- TRUE
 }
@@ -311,15 +311,10 @@ get.data.path <- function(type) {
 	return(file.path(find.package(package), "data"))
 }
 
-get.tfr.UN.data <- function(type, mcmc.set) {
-	path <- get.data.path(type)
-	file.name <- file.path(path, paste('UN', mcmc.set$meta$wpp.year, '.txt', sep=''))
-	return(read.tfr.file(file=file.name))
+get.tfr.UN.data <- function(meta) {
+	return(bayesTFR:::load.bdem.dataset('tfr', meta$wpp.year))
 }
 
-get.e0.UN.data <- function(type, mcmc.set) {
-	path <- get.data.path(type)
-	file.name <- file.path(path, paste('UN', mcmc.set$meta$wpp.year, 'e0', 
-								mcmc.set$meta$sex, '.txt', sep=''))
-	return(read.tfr.file(file=file.name))
+get.e0.UN.data <- function(meta) {
+	return(bayesTFR:::load.bdem.dataset(paste('e0', meta$sex, sep=''), meta$wpp.year))
 }

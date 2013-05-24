@@ -1,5 +1,4 @@
 \name{bayesDem-package}
-\Rdversion{1.1}
 \alias{bayesDem-package}
 \alias{bayesDem}
 \docType{package}
@@ -10,8 +9,8 @@ Provides Graphical user interface for the packages \pkg{bayesTFR}, \pkg{bayesLif
 \details{
 \tabular{ll}{
 Package: \tab bayesDem\cr
-Version: \tab 2.2-1\cr
-Date: \tab 2013-4-6\cr
+Version: \tab 2.3-0\cr
+Date: \tab 2013-5-24\cr
 Depends: \tab R (>= 2.14.2), cairoDevice, gWidgets, gWidgetsRGtk2, bayesTFR, bayesLife, bayesPop\cr
 License: \tab  GPL (>= 2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr

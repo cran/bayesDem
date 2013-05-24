@@ -8,14 +8,13 @@ Start Graphical User Interface for bayesTFR and bayesLife
 The function launches Graphical User Interface for the packages \pkg{\link[bayesTFR:bayesTFR-package]{bayesTFR}} and \pkg{\link[bayesLife:bayesLife-package]{bayesLife}}.
 }
 \usage{
-bayesDem.go(wpp.year.tfr = tfr.wpp.year.default, 
-    wpp.year.e0 = e0.wpp.year.default,
-    wpp.year.pop = pop.wpp.year.default)
+bayesDem.go(wpp.year.tfr = wpp.year.default, 
+    wpp.year.e0 = wpp.year.tfr, wpp.year.pop = wpp.year.tfr)
 }
 \arguments{
-  \item{wpp.year.tfr}{WPP year used in the bayesTFR package. Default is 2010. Note that the GUI will work only with values for which observed data are available in the bayesTFR package. Currently it is 2010 and 2008, see \pkg{\link[bayesTFR]{UN2010}}.}
-  \item{wpp.year.e0}{WPP year used in the bayesLife package. Default is 2010. Currently years 2010 and 2008 are available, see \pkg{\link[bayesLife]{UN2010e0}}.}
-   \item{wpp.year.pop}{WPP year used in the bayesPop package. Default is 2010. Currently years 2010 and 2008 are available, see \code{\link[bayesPop:bayesPop-package]{bayesPop}}.}
+  \item{wpp.year.tfr}{WPP year used for simulating TFR. Default is 2010. Packages called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} are used. Currently, 2010 and 2008 are available.}
+  \item{wpp.year.e0}{WPP year used for simulating life expectancy.}
+   \item{wpp.year.pop}{WPP year used for predicting population.}
 }
 %\details{
 %%  ~~ If necessary, more details than the description above ~~

@@ -22,13 +22,17 @@ e0mcmc.all.countries.group <- function(g, main.win, parent) {
 	timelo[1,2] <- e$sex <- bDem.gdroplist(c('Female', 'Male'), container=timelo, selected=1)
 	timelo[1,3, anchor=c(-1,0)] <- glabel("Start year:", container=timelo)
 	timelo[1,4] <- e$start.year <- gedit(defaults$start.year, width=4, container=timelo)
+	tooltip(e$start.year) <- 'Historical data prior to this year will be ignored.'
 	timelo[1,5, anchor=c(-1,0)] <- glabel("Present year:", container=timelo)
 	timelo[1,6] <- e$present.year <- gedit(defaults$present.year, width=4, container=timelo)
+	tooltip(e$present.year) <- 'Historical data after this year will be ignored.'
 	timelo[1,7, anchor=c(-1,0)] <- glabel("WPP year:", container=timelo)
-	timelo[1,8, anchor=c(-1,0)] <- glabel(parent$wpp.year, container=timelo)
+	timelo[1,8, anchor=c(-1,0)] <- wpp <- glabel(parent$wpp.year, container=timelo)
+	tooltip(wpp) <- 'To change this start bayesDem with wpp.year as second argument.'
 	timelo[2,1:2, anchor=c(-1,0)] <- glabel("User-defined e0 file:", container=timelo)
 	timelo[2,3:8] <- e$my.e0.file <- bDem.gfilebrowse(eval(defaults$my.e0.file), type='open', 
 					  width=30, quote=FALSE, container=timelo)
+	tooltip(e$my.e0.file) <- 'Overwrites default wpp data.'
 	addSpace(g, 10)
 	.create.mcmc.process.group(g, e, main.win, defaults, type='e0', advance.settigs.function=e0mcmc.advance.settings)
 	addSpace(g, 10)

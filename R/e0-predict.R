@@ -21,7 +21,7 @@ e0.pred.all.countries.group <- function(g, main.win, parent) {
 	e$sim.dir <- parent$sim.dir
 	addSpace(g, 10)
 	lo <- .create.prediction.setting.group(g, e, defaults)
-	lo[1,6] <- e$predict.jmale <- gcheckbox("Predict joint male", checked=defaults$predict.jmale, container=lo)
+	lo[2,6] <- e$predict.jmale <- gcheckbox("Predict joint male", checked=defaults$predict.jmale, container=lo)
 	addSpace(g, 10)
 	.create.status.label(g, e)
 	addSpring(g)
