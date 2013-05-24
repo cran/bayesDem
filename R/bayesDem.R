@@ -1,5 +1,5 @@
-bayesDem.go <- function(wpp.year.tfr=tfr.wpp.year.default, wpp.year.e0=e0.wpp.year.default,
-						wpp.year.pop=pop.wpp.year.default) {
+bayesDem.go <- function(wpp.year.tfr=wpp.year.default, wpp.year.e0=wpp.year.tfr,
+						wpp.year.pop=wpp.year.tfr) {
 		
 	quit.bayesdem <- function(h, ...) {
 		dispose(main.win)

@@ -28,6 +28,7 @@ TFRcontinueMCMCgroup <- function(g, main.win, parent=NULL) {
 	.create.cont.mcmc.process.group(phaseIII.g, e$phase3, main.win, defaults3, type='tfr3', mcmc.label="MCMC Phase III",
 								process.label="Process control for Phase III")
 	svalue(type.nb) <- 1
+	enabled(phaseIII.g) <- svalue(e$mcmc.type, index=TRUE) == 2
 	addSpace(g, 10)
 	.create.status.label(g, e)
 
@@ -59,8 +60,10 @@ TFRcontinueMCMCgroup <- function(g, main.win, parent=NULL) {
 				action=list(mw=main.win, env=e, cont.run=TRUE, type=type))
 	mclo[2,1, anchor=leftcenter] <- glabel("Number of iterations:", container=mclo)
 	mclo[2,2] <- e$iter <- gedit(defaults$iter, width=7, container=mclo)
+	tooltip(e$iter) <- "How many iterations to add to each chain."
 	mclo[3,1, anchor=leftcenter] <- glabel("Chain ids:", container=mclo)
 	mclo[3,2] <- e$chain.ids <- gedit(defaults$chain.ids, width=10, container=mclo)
+	tooltip(e$chain.ids) <- "Comma-separated ids of the chains. Leave empty if all chains should be continued."
 	.enable.auto.cont(FALSE, e)
 }
 

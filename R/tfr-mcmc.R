@@ -25,12 +25,16 @@ TFRrunMCMCgroup <- function(g, main.win, parent) {
 	pclo[1,1] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose)
 	pclo[1,2, anchor=leftcenter] <- "Verbose iter:"
 	pclo[1,3] <- e$verbose.iter <- gedit(defaults$verbose.iter, width=4, container=pclo)
+	tooltip(e$verbose.iter) <- 'Frequency of outputting the process status.'
 	pclo[2,1] <- e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=pclo)
+	tooltip(e$parallel) <- 'Chains will be processed in parallel.'
 	pclo[2,2, anchor=leftcenter] <- "Number of nodes:"
 	pclo[2,3] <- e$nr.nodes <- gedit(defaults$nr.chains, width=2, container=pclo)
+	tooltip(e$nr.nodes) <- 'Used if Parallel is checked. Set it to number of chains.'
 	if(show.buffer.size) {
 		pclo[3,2, anchor=leftcenter] <- "Buffer size:"
 		pclo[3,3] <- e$buffer.size <- gedit(defaults$buffer.size, width=4, container=pclo)
+		tooltip(e$buffer.size) <- "Number of iterations from which data are kept in memory before writing to disk."
 	}
 }
 
@@ -49,8 +53,10 @@ TFRrunMCMCgroup <- function(g, main.win, parent) {
 	mclo[2,2] <- e$nr.chains <- gedit(defaults$nr.chains, width=2)
 	mclo[3,1, anchor=leftcenter] <- glabel("Number of iterations:")
 	mclo[3,2] <- e$iter <- gedit(defaults$iter, width=7)
+	tooltip(e$iter) <- "How many iterations per chain to be simulated."
 	mclo[2,3, anchor=leftcenter] <- glabel("Thin:")
 	mclo[2,4] <- e$thin <- gedit(defaults$thin, width=2)
+	tooltip(e$thin) <- "Thinning for storing MCMCs on disk."
 	.enable.auto.run(defaults$iter=='auto', e)
 	mclo[3,3, anchor=leftcenter] <- glabel("RNG seed:")
 	mclo[3,4] <- e$seed <- gedit(defaults$seed, width=4)
@@ -72,17 +78,17 @@ mcmc.all.countries.group <- function(g, main.win, parent) {
 	timelo <- glayout(container=time.g)
 	timelo[1,1, anchor=leftcenter] <- glabel("Start year:", container=timelo)
 	timelo[1,2] <- e$start.year <- gedit(defaults$start.year, width=4, container=timelo)
-	#addSpace(time.g1, 20)
+	tooltip(e$start.year) <- 'Historical data prior to this year will be ignored.'
 	timelo[1,3, anchor=leftcenter] <- glabel("Present year:", container=timelo)
 	timelo[1,4] <- e$present.year <- gedit(defaults$present.year, width=4, container=timelo)
-	#addSpring(time.g1)
+	tooltip(e$present.year) <- 'Historical data after this year will be ignored.'
 	timelo[1,5, anchor=leftcenter] <- glabel("WPP year:", container=timelo)
-	timelo[1,6, anchor=c(1,0)] <- glabel(parent$wpp.year, container=timelo)
-	#time.g2 <- ggroup(horizontal=TRUE, container=time.g, expand=TRUE)
+	timelo[1,6, anchor=c(1,0)] <- wpp <- glabel(parent$wpp.year, container=timelo)
+	tooltip(wpp) <- 'To change this start bayesDem with wpp.year as argument.'
 	timelo[2,1:2, anchor=leftcenter] <- glabel("User-defined TFR file:", container=timelo)
-	#addSpring(time.g2)
 	timelo[2,3:6] <- e$my.tfr.file <- bDem.gfilebrowse(eval(defaults$my.tfr.file), type='open', 
 					  width=30, quote=FALSE, container=timelo)
+	tooltip(e$my.tfr.file) <- 'Overwrites default wpp data.'
 					  
 	addSpace(g, 10)
 	phase.g <- gframe("", markup=TRUE, horizontal=FALSE, spacing=10, container=g)
@@ -325,24 +331,30 @@ configure.auto.run <- function(h, ...) {
 	mclo[1,2] <- e$nr.chains <- gedit(defaults$nr.chains, width=2, container=mclo)
 	mclo[2,1] <- glabel("Number of iterations:", container=mclo)
 	mclo[2,2] <- e$iter <- gedit(defaults$iter, width=7, container=mclo)
+	tooltip(e$iter) <- "Number of iterations to run inititally after which the covergence is checked."
 	enabled(e$nr.chains) <- !cont.run
 
 	#mcmc.g2 <- ggroup(container=mcmc.g, horizontal=TRUE)
 	mclo[3,1] <- glabel("Iteration increments: ", container=mclo)
 	mclo[3,2] <- e$iter.incr <- gedit(defaults$iter.incr, width=7, container=mclo)
+	tooltip(e$iter.incr) <- "Number of iterations to run in the following loops after each of which the convergence is checked."
 	
 	#conv.g <- gframe("<span color='blue'>Convergence diagnostics</span>", markup=TRUE, horizontal=TRUE, container=g)
 	mclo[1,3:4] <- 'Convergence diagnostics:'
 	mclo[2,3] <- glabel("Burnin:", container=mclo)
 	mclo[2,4] <- e$burnin <- gedit(defaults$burnin, width=7, container=mclo)
+	tooltip(e$burnin) <- "Burnin used when checking convergence."
 	mclo[3,3] <- glabel("Thin:", container=mclo)
 	mclo[3,4] <- e$thin <- gedit(defaults$thin, width=7, container=mclo)
+	tooltip(e$thin) <- "Thin used when checking convergence."
 	
 	setup.g <- gframe("<span color='blue'>Run setup</span>", markup=TRUE, horizontal=TRUE, container=g)
 	glabel("Maximum loops:", container=setup.g)
 	e$max.loops <- gedit(defaults$max.loops, width=2, container=setup.g)
+	tooltip(e$max.loops) <- "How many times should the convergence be checked?"
 	addSpace(setup.g, 10)
 	e$run.prediction <- gcheckbox("Make predictions", checked=FALSE, container=setup.g)
+	tooltip(e$run.prediction) <- "If checked the prediction is generated using settings from the converged MCMCs."
 	addSpring(g)
 	# Buttons
 	button.g <- ggroup(container=g, horizontal=TRUE)
@@ -396,12 +408,6 @@ mcmc.advance.settings <- function(h, ...) {
 		# special cases
 		defaults$b.low <- defaults$a.low
 		defaults$b.up <- defaults$a.up
-#		defaults$S.ini <- (as.numeric(defaults$S.low)+as.numeric(defaults$S.up))/2
-#		defaults$a.ini <- (as.numeric(defaults$a.low)+as.numeric(defaults$a.up))/2
-#		defaults$b.ini <- (as.numeric(defaults$b.low)+as.numeric(defaults$b.up))/2
-#		defaults$const.ini <- (as.numeric(defaults$const.low)+as.numeric(defaults$const.up))/2
-#		defaults$sigma0.ini <- (as.numeric(defaults$sigma0.low)+as.numeric(defaults$sigma0.up))/2
-#		defaults$Triangle_c4.ini <- (as.numeric(defaults$Triangle_c4.low)+as.numeric(defaults$Triangle_c4.up))/2
 		defaults$alpha0.p <- '-1, 0.5, 1.5'
 		return(defaults)
 	}
@@ -673,7 +679,7 @@ mcmc.advance.settings <- function(h, ...) {
 	tfr.g <- gframe(paste("<span color='blue'>", label.type, " time series</span>", sep=''), markup=TRUE, 
 					horizontal=FALSE, container=g2)
 	tlo <- glayout(container=tfr.g)
-	tlo[1,1:2] <- bDem.gbutton(paste("  Select countries/regions from the UN ", label.type, " file  ", sep=''), 
+	tlo[1,1:2] <- bDem.gbutton(paste("  Select countries/regions from the UN ", label.type, " dataset  ", sep=''), 
 				container=tlo, handler=multiSelectCountryMenu,
 				action=list(mw=main.win, env=e, type=type, label.widget.name='extra.country.label'))
 	# For showing selected countries
@@ -681,6 +687,7 @@ mcmc.advance.settings <- function(h, ...) {
 	tlo[3,1, anchor=c(-1,0)] <- glabel(paste("User-defined ", label.type, " file:", sep=''), container=tlo)
 	tlo[3,2] <- e[[my.file.item]] <- bDem.gfilebrowse(eval(defaults[[my.file.item]]), type='open', 
 					  width=30, quote=FALSE, container=tlo)
+	tooltip(e[[my.file.item]]) <- "Overwrites default WPP data."
 }
 
 .create.extra.mcmc.process <- function(g, e, defaults) {
@@ -690,10 +697,13 @@ mcmc.advance.settings <- function(h, ...) {
 	itlo <- glayout(container=iter.g)
 	itlo[1,1] <- glabel("Number of iterations:", container=itlo)
 	itlo[1,2] <- e$iter <- gedit(defaults$iter, width=7, container=itlo)
+	tooltip(e$iter) <- "Leave empty if the same as the main simulation."
 	itlo[2,1] <- glabel("Thin:", container=itlo)
 	itlo[2,2] <- e$thin <- gedit(defaults$thin, width=2, container=itlo)
+	tooltip(e$thin) <- "Thinning interval for sampling from the hyperparameters."
 	itlo[3,1] <- glabel("Burnin:", container=itlo)
 	itlo[3,2] <- e$burnin <- gedit(defaults$burnin, width=4, container=itlo)
+	tooltip(e$burnin) <- "Burnin for sampling from the hyperparameters."
 		
 	addSpace(g2,10)			  					  
 	paral.g <- gframe("<span color='blue'>Process control</span>", markup=TRUE, horizontal=TRUE, container=g2)
@@ -702,10 +712,12 @@ mcmc.advance.settings <- function(h, ...) {
 	#addSpace(e$paral.g, 10)
 	pclo[1,2, anchor=leftcenter] <- "Verbose iter:"
 	pclo[1,3] <- e$verbose.iter <- gedit(defaults$verbose.iter, width=4, container=pclo)
+	tooltip(e$verbose.iter) <- 'Frequency of outputting the process status.'
 	pclo[2,1] <- e$parallel <- gcheckbox("Parallel", checked=defaults$parallel, container=pclo)
+	tooltip(e$parallel) <- 'Chains will be processed in parallel.'
 	pclo[2,2, anchor=leftcenter] <- glabel("Number of nodes:", container=pclo)
 	pclo[2,3] <- e$nr.nodes <- gedit(defaults$nr.nodes, width=2, container=pclo)
-
+	tooltip(e$nr.nodes) <- 'Used if Parallel is checked. Set it to number of chains in main simulation.'
 }
 
 .create.status.label <- function(g, e) {
@@ -755,14 +767,6 @@ mcmc.run.extra <- function(h, ...) {
 	}
 }
 
-get.wpp.years <- function() {
-	pkg.data.dir <- file.path(find.package("bayesTFR"), "data")
-	files <- list.files(pkg.data.dir)
-	#filter UNx.txt files
-	un.files <- grep('^UN[0-9]{4}.txt$', files, value=TRUE)
-	years <- as.integer(substr(un.files, 3,6))
-	return(years)
-}
 
 get.table.of.countries.from.locfile <- function(sim.dir, sorted=TRUE, type='tfr') {
 	mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(sim.dir=sim.dir))
@@ -772,20 +776,17 @@ get.table.of.countries.from.locfile <- function(sim.dir, sorted=TRUE, type='tfr'
 		return(NULL)
 	}
 	wpp.year <- mcmc.set$meta$wpp.year
-	
-	path <- get.data.path(type)
-	# get the UN TFR-file
-	tfr.data <- do.call(paste('get.', type, '.UN.data', sep=''), list(type=type, mcmc.set=mcmc.set))
+	# get the UN dataset
+	tfr.data <- do.call(paste('get.', type, '.UN.data', sep=''), list(meta=mcmc.set$meta))
 	codes <- tfr.data[,'country_code']
 	# filter out countries used already for an estimation
 	used.codes <- mcmc.set$meta$regions$country_code[1:(bayesTFR:::get.nr.countries.est(mcmc.set$meta))]
 	codes <- codes[!is.element(codes, used.codes)] # codes not used in the estimation
 			
-	# get the UN location file
-	loc.file.name <- file.path(path, paste('WPP', wpp.year, '_LOCATIONS', '.txt', sep=''))
-	loc.data <- read.tfr.file(file=loc.file.name)
-	loc.data <- loc.data[,c("country_code", "Major area, region, country or area")]
-	colnames(loc.data) <- c('code', 'name')
+	# get the UN location dataset
+	loc.data <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year)
+	loc.data <- loc.data[,c("country_code", "name")]
+	colnames(loc.data)[1] <- 'code'
 	
 	#include only those that are contained in codes
 	loc.data <- loc.data[is.element(loc.data[,'code'], codes),]

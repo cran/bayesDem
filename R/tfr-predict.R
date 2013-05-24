@@ -18,7 +18,8 @@ tfr.pred.all.countries.group <- function(g, main.win, parent) {
 	defaults <- formals(tfr.predict) # default argument values
 	e$sim.dir <- parent$sim.dir
 	addSpace(g, 10)
-	.create.prediction.setting.group(g, e, defaults)
+	lo <- .create.prediction.setting.group(g, e, defaults)
+	lo[2,6] <- e$use.correlation <- gcheckbox("Correlation between countries", checked=defaults$use.correlation, container=lo)
 	addSpace(g, 10)
 	ar.g <- gframe("<span color='blue'>Phase III Model</span>", markup=TRUE, horizontal=FALSE, container=g)
 	p3.g1 <- ggroup(horizontal=TRUE, container=ar.g)
@@ -75,24 +76,37 @@ tfr.pred.all.countries.group <- function(g, main.win, parent) {
 	#pred.g1 <- ggroup(horizontal=TRUE, container=pred.g)
 	plo <- glayout(container=pred.g)
 	plo[1,1, anchor=leftcenter] <- glabel("End year:", container=plo)
-	#glabel("<span color='red'>*</span>", markup=TRUE, container=pred.g1)
 	plo[1,2] <- e$end.year <- gedit(defaults$end.year, width=4, container=plo)
-	plo[1,4, anchor=leftcenter] <- 	glabel("Burnin:", container=plo)
-	#glabel("<span color='red'>*</span>", markup=TRUE, container=pred.g2)
-	plo[1,5] <- e$burnin <- gedit(defaults$burnin, width=7, container=plo)
-	plo[2,1, anchor=leftcenter] <- glabel("Nr. trajectories:", container=plo)
-	plo[2,2] <- e$nr.traj <- gedit(defaults$nr.traj, width=5, container=plo)
-	plo[2,3, anchor=leftcenter] <- 'OR'
-	plo[2,4, anchor=leftcenter] <- glabel("Thin:", container=plo)
-	plo[2,5] <- e$thin <- gedit(defaults$thin, width=5, container=plo)
-	plo[3,1, anchor=leftcenter] <- glabel("Nr. ascii trajectories:", container=plo)
-	plo[3,2] <- e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=plo)
-	plo[3,4, anchor=leftcenter] <- glabel("RNG seed:", container=plo)
-	plo[3,5] <- e$seed <- gedit(defaults$seed, width=4, container=plo)
-	plo[2,6] <- e$use.diagnostics <- gcheckbox("Use diagnostics", checked = defaults$use.diagnostics, 
+	tooltip(e$end.year) <- 'End year of the prediction.'
+	l <- 2
+	plo[l,1, anchor=leftcenter] <- glabel("Start year:", container=plo)
+	plo[l,2] <- e$start.year <- gedit(defaults$start.year, width=4, container=plo)
+	tooltip(e$start.year) <- 'Start year of the prediction. Leave empty if the same as present.year in estimation.'
+	plo[l,4, anchor=leftcenter] <- 	glabel("Burnin:", container=plo)
+	plo[l,5] <- e$burnin <- gedit(defaults$burnin, width=7, container=plo)
+	tooltip(e$burnin) <- 'Must be smaller than #iter in MCMCs.'
+
+	l <- l+1
+	plo[l,1, anchor=leftcenter] <- glabel("Nr. trajectories:", container=plo)
+	plo[l,2] <- e$nr.traj <- gedit(defaults$nr.traj, width=5, container=plo)
+	tooltip(e$nr.traj) <- "How many trajectories to generate. Can be alternatively determined by Thin or by settings in Auto simulation."
+	plo[l,3, anchor=leftcenter] <- 'OR'
+	plo[l,4, anchor=leftcenter] <- glabel("Thin:", container=plo)
+	plo[l,5] <- e$thin <- gedit(defaults$thin, width=5, container=plo)
+	tooltip(e$thin) <- "Determines how many trajectories to generate. Can be alternatively determined by Nr. trajectories or by settings in Auto simulation."
+	l <- l+1
+	plo[l,1, anchor=leftcenter] <- glabel("Nr. ascii trajectories:", container=plo)
+	plo[l,2] <- e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=plo)
+	tooltip(e$save.as.ascii) <- 'Number of trajectories to be exported into an ascii file. Set 0 if no export is desired.'
+	plo[l,4, anchor=leftcenter] <- glabel("RNG seed:", container=plo)
+	plo[l,5] <- e$seed <- gedit(defaults$seed, width=4, container=plo)
+	
+	l <- 3
+	plo[l,6:7] <- e$use.diagnostics <- gcheckbox("Use diagnostics", checked = defaults$use.diagnostics, 
 									handler=function(h, ...) enable.pred.settings(!svalue(h$obj)), 
 									container=plo)
-	plo[3,6] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=plo)
+	tooltip(e$use.diagnostics) <- "Check this if an 'auto' simulation or convergence diagnostics completed successfully. Nr. trajectories and Thin will be ignored - Settings is taken from converged MCMCs."
+	plo[l+1,6:7] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=plo)
 	enable.pred.settings(!defaults$use.diagnostics)
 	return(plo)
 }
@@ -102,10 +116,10 @@ run.tfr.prediction <- function(h, ...)
 	e <- h$action$env
 	if(!has.required.arguments(list(sim.dir='Simulation directory',
 									end.year='End year', burnin='Burnin'), env=e)) return()
-	param.names <- list(numeric=c('mu', 'rho', 'end.year', 'burnin', 'seed', 'nr.traj', 'thin', 'burnin3'), 
+	param.names <- list(numeric=c('mu', 'rho', 'end.year', 'start.year', 'burnin', 'seed', 'nr.traj', 'thin', 'burnin3'), 
 						numvector=c('sigmaAR1'),
 						text=c('sim.dir'),
-						logical=c('verbose', 'use.diagnostics'),
+						logical=c('verbose', 'use.diagnostics', 'use.correlation'),
 						numtext=c('save.as.ascii') #can be both - numeric or text
 						)
 	params <- get.parameters(param.names, e, h$action$script)
@@ -196,6 +210,7 @@ get.tfr.prediction.status <- function(h, ...)
 	sim.g2 <- ggroup(horizontal=TRUE, container=sim.g)
 	glabel("Nr. of ascii trajectories:", container=sim.g2)
 	e$save.as.ascii <- gedit(defaults$save.as.ascii, width=5, container=sim.g2)
+	tooltip(e$save.as.ascii) <- 'Number of trajectories to be exported into an ascii file. Set 0 if no export is desired.'
 	addSpace(sim.g2, 30)
 	e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=sim.g2)
 	addSpace(g, 10)

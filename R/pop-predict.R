@@ -19,15 +19,20 @@ pop.pred.countries.group <- function(g, main.win, parent) {
 	pred.g1 <- glayout(container=pred.g)
 	pred.g1[1,1, anchor=leftcenter] <- glabel("End year:", container=pred.g1)
 	pred.g1[1,2] <- e$end.year <- gedit(defaults$end.year, width=4, container=pred.g1)
+	tooltip(e$end.year) <- 'End year of the prediction.'
 	pred.g1[1,3, anchor=leftcenter] <- glabel("     WPP year:", container=pred.g1)
-	pred.g1[1,4, anchor=leftcenter] <- glabel(parent$wpp.year, container=pred.g1)
+	pred.g1[1,4, anchor=leftcenter] <- wpp <- glabel(parent$wpp.year, container=pred.g1)
+	tooltip(wpp) <- 'To change this start bayesDem with wpp.year as (third) argument.'
 	pred.g1[2,1, anchor=leftcenter] <- glabel("Start year:", container=pred.g1)
 	pred.g1[2,2] <- e$start.year <- gedit(defaults$start.year, width=4, container=pred.g1)
+	tooltip(e$start.year) <- 'Historical data on mortality prior to this year will be ignored.'
 	pred.g1[2,3, anchor=leftcenter] <- glabel("Present year:", container=pred.g1)
 	pred.g1[2,4] <- e$present.year <- gedit(defaults$present.year, width=4, container=pred.g1)
+	tooltip(e$present.year) <- 'Initial year of the population data.'
 	pred.g1[1,5] <- '    '
 	pred.g1[3,1, anchor=leftcenter] <- glabel("Nr. trajectories:", container=pred.g1)
 	pred.g1[3,2] <- e$nr.traj <- gedit(defaults$nr.traj, width=5, container=pred.g1)
+	tooltip(e$nr.traj) <- 'If left empty, #trajectories of TFR or e0 is used.'
 	pred.g1[1,6:7] <- e$keep.vital.events <- gcheckbox("Keep vital events", checked=defaults$keep.vital.events, container=pred.g1)
 	pred.g1[2,6:7] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=pred.g1)
 	
@@ -99,7 +104,7 @@ pop.pred.aggregation.group <- function(g, main.win, parent) {
 	lo[2,1, anchor=leftcenter] <- 'Name:'
 	lo[2,2] <- e$name <- gedit('', container=lo)
 	lo[3,1:2] <- bDem.gbutton('   Select regions   ', container=lo, handler=selectRegionMenuPop,
-				action=list(mw=main.win, env=e, multiple=TRUE, label.widget.name='region.label'))
+				action=list(mw=main.win, env=e, wpp.year=parent$wpp.year, multiple=TRUE, label.widget.name='region.label'))
 	lo[3,3:4, anchor=leftcenter] <- e$region.label <- glabel('', container=lo)
 	lo[1,3] <- '     ' 
 	lo[1,4] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=lo)
@@ -377,7 +382,7 @@ selectCountryMenuPop <- function(h, ...) {
 	if (!is.null(h$action$env$country.sel.win)) 
 			visible(h$action$env$country.sel.win) <- TRUE
 	else {
-		SRB <- bayesPop:::read.bayesPop.file(paste('SexRatioAtBirth', h$action$wpp.year, '.txt', sep=''))
+		SRB <- bayesPop:::load.wpp.dataset('sexRatio', h$action$wpp.year)
 		country.table <- SRB[,c("country_code", "country")]
 		h$action$env$country.table <- country.table
 		h$action$env$country.sel.win <- win <- gwindow('Select countries', 
@@ -414,10 +419,8 @@ selectRegionMenuPop <- function(h, ...) {
 	if (!is.null(h$action$env$region.sel.win)) 
 			visible(h$action$env$region.sel.win) <- TRUE
 	else {
-		e <- new.env()
-		data(LOCATIONS, package='bayesPop', envir=e)
-		
-		region.table <- e$LOCATIONS[is.element(e$LOCATIONS[,'location_type'], c(0,2,3)), c("country_code", "name")]
+		LOCATIONS <- bayesTFR:::load.bdem.dataset('UNlocations', h$action$wpp.year)		
+		region.table <- LOCATIONS[is.element(LOCATIONS[,'location_type'], c(0,2,3)), c("country_code", "name")]
 		names(region.table) <- c('code', 'name')
 		h$action$env$region.table <- region.table
 		h$action$env$region.sel.win <- win <- gwindow('Select regions', 
