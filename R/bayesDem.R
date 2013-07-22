@@ -1,8 +1,9 @@
 bayesDem.go <- function(wpp.year.tfr=wpp.year.default, wpp.year.e0=wpp.year.tfr,
 						wpp.year.pop=wpp.year.tfr) {
-		
+			
 	quit.bayesdem <- function(h, ...) {
 		dispose(main.win)
+		#detach(gtkdb)
 	}
 	options(guiToolkit=guiToolkit.default)
 	# 
@@ -52,6 +53,9 @@ bayesDem.go <- function(wpp.year.tfr=wpp.year.default, wpp.year.e0=wpp.year.tfr,
 	#addHandlerDragMotion(main.win, handler=function(h, ...) focus(h$obj) <- TRUE)
 	dispose(wait.window)
 	visible(main.win) <- TRUE
-
+	# This is necessary in order for bayesTFR etc to find RGtk2 functions
+	# gtkdb <- list(gtkEventsPending=RGtk2::gtkEventsPending, gtkMainIteration=RGtk2::gtkMainIteration)
+	# attach(gtkdb)
+	do.call('require', list('RGtk2'))
 }
 

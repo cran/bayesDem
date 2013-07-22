@@ -2,3 +2,7 @@
 export(
     bayesDem.go
     )
+import(#"cairoDevice", 
+		"wpp2012",
+		"RGtk2")
+

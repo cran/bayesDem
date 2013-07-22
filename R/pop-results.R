@@ -78,8 +78,8 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 	lo[4,1:2] <- e$plot.by.age <- gcheckbox("Plot by age", container=lo, checked=FALSE,
 							handler=function(h,...){
 								by.age <- svalue(h$obj)
-								enabled(e$sum.over.ages) <- !by.age && !svalue(e$expression)
-								enabled(e$age.gb) <- !by.age && !svalue(e$expression)
+								enabled(e$sum.over.ages) <- !by.age && !svalue(e$use.expression)
+								enabled(e$age.gb) <- !by.age && !svalue(e$use.expression)
 								enabled(e$start.year) <- !by.age
 								enabled(e$end.year) <- !by.age
 								enabled(e$year) <- by.age

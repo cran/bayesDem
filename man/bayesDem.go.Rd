@@ -12,7 +12,7 @@ bayesDem.go(wpp.year.tfr = wpp.year.default,
     wpp.year.e0 = wpp.year.tfr, wpp.year.pop = wpp.year.tfr)
 }
 \arguments{
-  \item{wpp.year.tfr}{WPP year used for simulating TFR. Default is 2010. Packages called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} are used. Currently, 2010 and 2008 are available.}
+  \item{wpp.year.tfr}{WPP year used for simulating TFR. Default is 2012. Packages called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} are used. Currently, 2012, 2010 and 2008 are available.}
   \item{wpp.year.e0}{WPP year used for simulating life expectancy.}
    \item{wpp.year.pop}{WPP year used for predicting population.}
 }
