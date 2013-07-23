@@ -1,7 +1,7 @@
 # defaults
 ###########
 guiToolkit.default <- 'RGtk2'
-wpp.year.default <- 2010
+wpp.year.default <- 2012
 
 # color.main <- "blanchedalmond"
 # color.button <- "bisque1"

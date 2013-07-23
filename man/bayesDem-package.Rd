@@ -9,9 +9,8 @@ Provides Graphical user interface for the packages \pkg{bayesTFR}, \pkg{bayesLif
 \details{
 \tabular{ll}{
 Package: \tab bayesDem\cr
-Version: \tab 2.3-0\cr
-Date: \tab 2013-5-24\cr
-Depends: \tab R (>= 2.14.2), cairoDevice, gWidgets, gWidgetsRGtk2, bayesTFR, bayesLife, bayesPop\cr
+Version: \tab 2.3-2\cr
+Date: \tab 2013-7-22\cr
 License: \tab  GPL (>= 2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr
 }
