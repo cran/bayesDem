@@ -329,11 +329,11 @@ get.table.of.countries.from.prediction <- function(sim.dir, not.predicted=TRUE, 
 	loc.data.sim <- get.table.of.countries.from.meta(sim.dir, prediction=FALSE, sorted=sorted, pred.type=type, env=env)
 	if(is.null(loc.data.sim)) return(NULL)
 	mcmc.set <- do.call(paste('get.', type, '.mcmc', sep=''), list(sim.dir=sim.dir))
-	if (bayesTFR:::get.nr.countries(mcmc.set$meta) <= bayesTFR:::get.nr.countries.est(mcmc.set$meta)) {
+	if (get.nr.countries(mcmc.set$meta) <= get.nr.countries.est(mcmc.set$meta)) {
 		gmessage("No countries/regions without a prediction available.")
 		return(NULL)
 	}
-	loc.data.sim.extra <- loc.data.sim[(bayesTFR:::get.nr.countries.est(mcmc.set$meta)+1):(bayesTFR:::get.nr.countries(mcmc.set$meta)),]
+	loc.data.sim.extra <- loc.data.sim[(get.nr.countries.est(mcmc.set$meta)+1):(get.nr.countries(mcmc.set$meta)),]
 	# find countries without a prediction
 	is.predicted <- is.element(loc.data.sim.extra[,'code'], loc.data.pred[,'code'])
 	not.predicted.idx <- (1:dim(loc.data.sim.extra)[1])[!is.predicted]

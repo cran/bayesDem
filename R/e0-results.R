@@ -241,7 +241,7 @@ e0.show.map.group <- function(g, main.win, parent.env) {
 	e <- new.env()
 	e$sim.dir <- parent.env$sim.dir
 	addSpace(g, 10)
-	lo <- .create.map.settings.group(g, e, measures=c('e0', bayesLife:::e0.parameter.names.cs.extended()))
+	lo <- .create.map.settings.group(g, e, measures=c('e0', e0.parameter.names.cs.extended()))
 	lo[4, 1, anchor=c(-1,0)] <- "Sex:"
 	lo[4, 2] <- e$sex <- bDem.gdroplist(c('Female', 'Male'), container=lo, selected=1)
 	addSpring(g)

@@ -35,12 +35,11 @@ pop.show.trajectories.group <- function(g, main.win, parent.env) {
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
 									horizontal=FALSE, container=g)
 	glo <- glayout(container=country.f)
-	glo[1,1, anchor=leftcenter] <- 'Aggregation method:'
+	glo[1,1, anchor=leftcenter] <- 'Aggregation:'
 	glo[1,2] <- e$aggregation.dl <- bDem.gbutton(" None ", container=glo,
 				handler=selectAggregationMenuPop,
 				action=list(mw=main.win, env=e, label.widget.name='aggregation.dl'))
 	e$aggregation <- NULL
-	#bDem.gdroplist(c('None', 'independence', 'regional'), container=glo)
 	e$show.traj.country <- create.country.widget(country.f, defaults.traj.all, 
 									main.win, glo=glo, start.row=2, prediction=TRUE, parent.env=e)
 	l <- 2+4
@@ -195,11 +194,10 @@ pop.show.pyramid.group <- function(g, main.win, parent.env) {
 	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
 									horizontal=FALSE, container=g)
 	glo <- glayout(container=country.f)
-	glo[1,1, anchor=leftcenter] <- 'Aggregation method:'
+	glo[1,1, anchor=leftcenter] <- 'Aggregation:'
 	glo[1,2] <- e$aggregation.dl <- bDem.gbutton(" None ", container=glo,
 				handler=selectAggregationMenuPop,
 				action=list(mw=main.win, env=e, label.widget.name='aggregation.dl'))
-	#bDem.gdroplist(c('None', 'independence', 'regional'), container=glo)
 	e$show.pyr.country <- create.country.widget(country.f, defaults.pyr.all, 
 									main.win, glo=glo, start.row=2, prediction=TRUE, parent.env=e, disable.table.button=FALSE)
 	addSpace(g, 10)
@@ -405,13 +403,12 @@ selectAggregationMenuPop <- function(h, ...) {
 	aggr.selected <- function(h1, ...) {
 		aggr <- h$action$env$aggregation <- as.character(svalue(h$action$env$aggr.gt))	
 		visible(h$action$env$aggr.sel.win) <- FALSE
+		if(length(aggr) == 0) aggr <- 'None' # OK button was pressed without making selection
 		if(!is.null(h$action$label.widget.name) && !is.null(h$action$env[[h$action$label.widget.name]])) 
 			svalue(h$action$env[[h$action$label.widget.name]]) <- aggr
 		if(aggr == 'None') h$action$env$aggregation <- NULL
 	}
-	if (!is.null(h$action$env$aggr.sel.win)) 
-		visible(h$action$env$aggr.sel.win) <- TRUE
-	else {
+	get.avail.aggregations <- function() {
 		if(!has.required.arguments(list(sim.dir='Simulation directory'), env=h$action$env)) return()
 		param <-list(sim.dir=svalue(h$action$env$sim.dir))
 		pred <- do.call('get.pop.prediction', param)
@@ -420,7 +417,13 @@ selectAggregationMenuPop <- function(h, ...) {
 						title='Input Error', icon='error')
         	return(NULL)
 		}
-		h$action$env$aggr.table <- data.frame(Name=c('None', bayesPop:::available.pop.aggregations(pred)))
+		return(data.frame(Name=c('None', bayesPop:::available.pop.aggregations(pred))))
+	}
+	aggrs <- get.avail.aggregations()
+	if (!is.null(h$action$env$aggr.sel.win) && setequal(aggrs$Name, h$action$env$aggr.table$Name))
+		visible(h$action$env$aggr.sel.win) <- TRUE
+	else {		
+		h$action$env$aggr.table <- aggrs
 		h$action$env$aggr.sel.win <- win <- gwindow('Select aggregation', 
 							parent=h$action$mw, height=450, width=200,
 							handler=function(h, ...) {

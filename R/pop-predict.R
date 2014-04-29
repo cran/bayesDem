@@ -95,10 +95,10 @@ pop.pred.aggregation.group <- function(g, main.win, parent) {
 	addSpace(g, 10)
 	aggr.f <- gframe("<span color='blue'>Aggregation settings</span>", markup=TRUE, horizontal=FALSE, container=g)
 	lo <- glayout(container=aggr.f)
-	lo[1,1, anchor=leftcenter] <- 'Method:'
-	lo[1,2] <- e$method <- gradio(c('independence', 'regional'), selected=1, container=lo, horizontal=TRUE,
+	lo[1,1, anchor=leftcenter] <- 'Input Type:'
+	lo[1,2] <- e$input.type <- gradio(c('country', 'region'), selected=1, container=lo, horizontal=TRUE,
 									handler=function(h, ...) {
-										enable <- svalue(h$obj) == 'regional'
+										enable <- svalue(h$obj) == 'region'
 										enable.prob.inputs(enable)
 									})
 	lo[2,1, anchor=leftcenter] <- 'Name:'
@@ -148,14 +148,12 @@ run.pop.prediction <- function(h, ...) {
 	e <- h$action$env
 	if(!has.required.arguments(list(output.dir='Simulation directory', end.year='End year', 
 									start.year='Start year', present.year='Present year'), env=e)) return()
-	#if(!has.required.arguments(list(tfr.sim.dir='TFR', e0M.sim.dir='e0 male',
-	#								e0F.sim.dir='e0 female'), env=e$inputs)) return()
 	param.names <- list(numeric=c('end.year', 'start.year', 'present.year', 'nr.traj'), 
 						text=c('output.dir'),
 						logical=c('verbose', 'keep.vital.events')
 						)
 	param.input.names.opt <- list(
-		text=c('tfr.sim.dir', 'tfr.file', 'e0M.sim.dir', 'e0M.file', 'e0F.sim.dir', 'e0F.file',
+		text=c('tfr.sim.dir', 'tfr.file', 'e0M.sim.dir', 'e0M.file', 'e0F.sim.dir', 'e0F.file', 'migMtraj', 'migFtraj',
 				'popM', 'popF', 'mxM', 'mxF', 'srb', 'migM', 'migF', 'mig.type'))
 	params <- get.parameters(param.names, e, h$action$script)
 	params.inp <- list()
@@ -208,12 +206,12 @@ run.pop.prediction <- function(h, ...) {
 run.pop.aggregation <- function(h, ...) {
 	e <- h$action$env
 	if(!has.required.arguments(list(sim.dir='Simulation directory'), env=e)) return()
-	param.names <- list(text=c('sim.dir', 'name', 'method'),
+	param.names <- list(text=c('sim.dir', 'name', 'input.type'),
 						logical=c('verbose')
 						)
 	params <- get.parameters(param.names, e, h$action$script)
 	params.inputs <- list()
-	if(svalue(e$method) == 'regional') {
+	if(svalue(e$input.type) == 'region') {
 		param.input.names.opt <- list(text=c('tfr.sim.dir', 'e0M.sim.dir', 'e0F.sim.dir'))
 		params.inputs <- c(params.inputs, get.parameters(param.input.names.opt, e$inputs, h$action$script))
 		if(svalue(e$inputs$e0M.joint)) 
@@ -258,7 +256,7 @@ get.pop.aggregation.status <- function(h, ...)
 
 
 OptInputFilesPopPred <- function(h, ...) {
-	input.names <- c('tfr.sim.dir', 'tfr.file', 'e0M.sim.dir', 'e0M.file', 'e0M.joint', 'e0F.sim.dir', 'e0F.file',
+	input.names <- c('tfr.sim.dir', 'tfr.file', 'e0M.sim.dir', 'e0M.file', 'e0M.joint', 'e0F.sim.dir', 'e0F.file', 'migMtraj', 'migFtraj',
 				'popM', 'popF', 'mxM', 'mxF', 'srb', 'migM', 'migF', 'mig.type')
 	defaults <- h$action$defaults
 	defaults$inputs$e0M.joint <- TRUE
@@ -286,8 +284,10 @@ OptInputFilesPopPred <- function(h, ...) {
 		h$action$env$inputs.modified <- FALSE
 		e <- new.env() # h$action$env
 		g <- ggroup(horizontal=FALSE, container=win)
+		g.prob <- gframe("<span color='blue'>Probabilistic Inputs (trajectories)</span>", markup=TRUE, 
+							horizontal=FALSE, container=g)
 		g.tfr <- gframe("<span color='#0B6138'>Total Fertility Rate (select one)</span>", markup=TRUE, 
-							horizontal=TRUE, container=g)
+							horizontal=TRUE, container=g.prob)
 		glabel("bayesTFR sim folder:", container=g.tfr)
 		e$tfr.sim.dir <- bDem.gfilebrowse(eval(defaults$inputs$tfr.sim.dir), type='selectdir', 
 					  width=20, quote=FALSE, container=g.tfr)
@@ -296,8 +296,8 @@ OptInputFilesPopPred <- function(h, ...) {
 					  width=20, quote=FALSE, container=g.tfr)
 		
 		g.e0f <- gframe("<span color='#0B6138'>Female Life Expectancy (select one)</span>", markup=TRUE, 
-							horizontal=TRUE, container=g)
-		glabel("bayesLife sim folder:", container=g.e0f)
+							horizontal=TRUE, container=g.prob)
+		glabel("bayesLife sim folder: ", container=g.e0f)
 		e$e0F.sim.dir <- bDem.gfilebrowse(eval(defaults$inputs$e0F.sim.dir), type='selectdir', 
 					  width=20, quote=FALSE, container=g.e0f)
 		glabel("CSV file:", container=g.e0f)
@@ -305,7 +305,7 @@ OptInputFilesPopPred <- function(h, ...) {
 					  width=20, quote=FALSE, container=g.e0f)
 					  			  
 		g.e0m <- gframe("<span color='#0B6138'>Male Life Expectancy (select one)</span>", markup=TRUE, 
-							horizontal=TRUE, container=g)
+							horizontal=TRUE, container=g.prob)
 		e$e0M.joint <- gcheckbox("Joint with Female", checked=defaults$inputs$e0M.joint, container=g.e0m,
 							handler=function(h1,...) {
 								enabled(e$e0M.sim.dir) <- !svalue(h1$obj)
@@ -321,8 +321,19 @@ OptInputFilesPopPred <- function(h, ...) {
 		enabled(e$e0M.sim.dir) <- !svalue(e$e0M.joint)
 		enabled(e$e0M.file) <- !svalue(e$e0M.joint)
 		
-		g.other <- gframe("<span color='#0B6138'>Other Optional Files</span>", markup=TRUE, 
+		g.migtraj <- gframe("<span color='#0B6138'>Net Age-Specific Migration Counts</span>", markup=TRUE, 
+							horizontal=TRUE, container=g.prob)
+		glabel("CSV file for Male:      ", container=g.migtraj)
+		e$migMtraj <- bDem.gfilebrowse(eval(defaults$inputs$migMtraj), type='open', 
+					  width=20, quote=FALSE, container=g.migtraj)
+		glabel(" Female:", container=g.migtraj)
+		e$migFtraj <- bDem.gfilebrowse(eval(defaults$inputs$migFtraj), type='open', 
+					  width=20, quote=FALSE, container=g.migtraj)
+							
+		g.other <- gframe("<span color='blue'>Deterministic Inputs (optional files)</span>", markup=TRUE, 
 							horizontal=FALSE, container=g)
+		#g.other <- gframe("<span color='#0B6138'>Other Optional Files</span>", markup=TRUE, 
+		#					horizontal=FALSE, container=g)
 		glo <- glayout(container=g.other)
 		glo[1,1] <- glabel("Initial Male Population:", container=glo)
 		glo[1,2] <- e$popM <- bDem.gfilebrowse(eval(defaults$inputs$popM), type='open', 

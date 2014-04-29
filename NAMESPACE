@@ -3,6 +3,7 @@ export(
     bayesDem.go
     )
 import(#"cairoDevice", 
-		"wpp2012",
-		"RGtk2")
+		"wpp2012", "RGtk2", gWidgets, gWidgetsRGtk2, bayesTFR, bayesLife, bayesPop)
+
+
 

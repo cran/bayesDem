@@ -98,7 +98,7 @@ create.trajectories.group <- function(g, parent.env, main.win) {
 	bDem.gbutton(action=GraphB.show.traj.act, container=show.traj.bg)
 }
 
-.create.map.settings.group <- function(g, e, measures=c('TFR', 'lambda', bayesTFR:::tfr.parameter.names.cs.extended())) {
+.create.map.settings.group <- function(g, e, measures=c('TFR', 'lambda', tfr.parameter.names.cs.extended())) {
 	leftcenter <- c(-1,0)
 	map.set.f <- gframe("<span color='blue'>Map settings</span>", markup=TRUE, 
 									horizontal=FALSE, container=g)
