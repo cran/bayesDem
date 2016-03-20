@@ -117,8 +117,8 @@ create.graphics.window <- function(parent, title='', dpi=80, ps=10, ...) {
 	return(g)
 }
 
-create.script.widget <- function(script, parent, package) {
-	script.widget <- gwindow(paste(package, 'commands'), parent=parent, visible=FALSE, width=600, height=150)
+create.script.widget <- function(script, parent, package, title=paste(package, 'commands')) {
+	script.widget <- gwindow(title, parent=parent, visible=FALSE, width=600, height=150)
 	set.widget.bgcolor(script.widget, "white")
 	gt <- gtext("", container=script.widget)
 	insert(gt, script)

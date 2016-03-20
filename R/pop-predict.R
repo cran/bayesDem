@@ -34,7 +34,11 @@ pop.pred.countries.group <- function(g, main.win, parent) {
 	pred.g1[3,2] <- e$nr.traj <- gedit(defaults$nr.traj, width=5, container=pred.g1)
 	tooltip(e$nr.traj) <- 'If left empty, #trajectories of TFR or e0 is used.'
 	pred.g1[1,6:7] <- e$keep.vital.events <- gcheckbox("Keep vital events", checked=defaults$keep.vital.events, container=pred.g1)
-	pred.g1[2,6:7] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=pred.g1)
+	pred.g1[2,6:7] <- e$fixed.mx <- gcheckbox("Fixed mortality", checked=defaults$fixed.mx, container=pred.g1)
+	tooltip(e$fixed.mx) <- 'If selected, future mx is used instead of e0.'
+	pred.g1[3,6:7] <- e$fixed.pasfr <- gcheckbox("Fixed percent fert.", checked=defaults$fixed.pasfr, container=pred.g1)
+	tooltip(e$fixed.pasfr) <- 'If not selected, future percent fertility is computed on the fly.'
+	pred.g1[1,8:9] <- e$verbose <- gcheckbox("Verbose", checked=defaults$verbose, container=pred.g1)
 	
 	addSpace(g, 10)
 	countries.g <- gframe("<span color='blue'>Countries selection</span>", markup=TRUE, 
@@ -150,7 +154,7 @@ run.pop.prediction <- function(h, ...) {
 									start.year='Start year', present.year='Present year'), env=e)) return()
 	param.names <- list(numeric=c('end.year', 'start.year', 'present.year', 'nr.traj'), 
 						text=c('output.dir'),
-						logical=c('verbose', 'keep.vital.events')
+						logical=c('verbose', 'keep.vital.events', 'fixed.mx', 'fixed.pasfr')
 						)
 	param.input.names.opt <- list(
 		text=c('tfr.sim.dir', 'tfr.file', 'e0M.sim.dir', 'e0M.file', 'e0F.sim.dir', 'e0F.file', 'migMtraj', 'migFtraj',

@@ -12,6 +12,9 @@ popResults.group <- function(g, main.win, parent) {
 	traj.g <- ggroup(label="<span color='#0B6138'>Population trajectories</span>", 
 							markup=TRUE, horizontal=FALSE, container=nb)
 	traj.env <- pop.show.trajectories.group(traj.g, main.win, e)
+	cohort.g <- ggroup(label="<span color='#0B6138'>Cohort trajectories</span>", 
+							markup=TRUE, horizontal=FALSE, container=nb)
+	cohort.env <- pop.show.cohort.trajectories.group(cohort.g, main.win, e)
 	pyr.g <- ggroup(label="<span color='#0B6138'>Population pyramid</span>", 
 							markup=TRUE, horizontal=FALSE, container=nb)
 	pyr.env <- pop.show.pyramid.group(pyr.g, main.win, e)
@@ -178,6 +181,163 @@ pop.get.trajectories.table.values <- function(pred, param, e, ...) {
 	colnames(t)[2:ncol(t)] <- paste('q', colnames(t)[2:ncol(t)], sep='')
 	return(t)
 }
+
+pop.show.cohort.trajectories.group <- function(g, main.win, parent.env) {
+	leftcenter <- c(-1, 0)
+	e <- new.env()
+	e$sim.dir <- parent.env$sim.dir
+	e$pred.type <- 'pop'
+	e$new.country.select.if.changed <- c('aggregation.dl')
+	defaults.pred <- formals(pop.predict)
+	defaults.cohort <- formals(bayesPop::pop.cohorts.plot)
+		
+	addSpace(g, 10)
+	country.f <- gframe("<span color='blue'>Country settings</span>", markup=TRUE, 
+									horizontal=FALSE, container=g)
+	glo <- glayout(container=country.f)
+	glo[1,1, anchor=leftcenter] <- 'Aggregation:'
+	glo[1,2] <- e$aggregation.dl <- bDem.gbutton(" None ", container=glo,
+				handler=selectAggregationMenuPop,
+				action=list(mw=main.win, env=e, label.widget.name='aggregation.dl'))
+	e$show.cohort.country <- create.country.widget(country.f, defaults.cohort, show.all=FALSE,
+									main.win, glo=glo, start.row=2, prediction=TRUE, parent.env=e, disable.table.button=FALSE)
+	addSpace(g, 10)
+	l <- 3
+	exp.g <- e$show.cohort.country$country.lo
+	exp.g[l,1:3] <- gseparator(container=exp.g)
+	exp.g[l+1,1] <- e$use.expression <- gcheckbox('Expression: ', container=exp.g, checked=FALSE, 
+						handler=function(h,...){
+							use.expr <- svalue(h$obj)
+							enabled(e$expression) <- use.expr
+							enabled(e$show.cohort.country$country.w) <- !use.expr
+							enabled(e$show.cohort.country$country.select.b) <- !use.expr
+							e$set.country.to.null <- use.expr
+							})
+	exp.g[l+1,2:3] <- e$expression <- gedit('', container=exp.g, fill=TRUE, expand=TRUE)
+	tooltip(e$expression) <- "See ?pop.expressions. Use XXX as country code if 'All countries' is checked."
+	enabled(e$expression) <- FALSE
+	addSpace(g, 10)
+
+	type.settings.f <- gframe("<span color='blue'>Cohort trajectories settings</span>", markup=TRUE, 
+								horizontal=FALSE, container=g)
+	type.g1 <- glayout(horizontal=TRUE, container=type.settings.f)
+	type.g1[1,1, anchor=leftcenter] <- glabel('CI (%):', container=type.g1)
+	type.g1[1,2] <- e$pi <- gedit('80, 95', width=7, container=type.g1)
+	type.g1[2,1] <- cohorts.gb <- bDem.gbutton(" Cohorts ", container=type.g1,
+				handler=selectYearsMenuPop,
+				action=list(mw=main.win, env=e, widget='cohorts', multiple=TRUE))
+	type.g1[2,2] <- e$cohorts <- gedit('', width=10, container=type.g1)
+	tooltip(e$cohorts) <- "There will be one plot per cohort."
+	type.g1[1,3, anchor=leftcenter] <- glabel('Legend position:', container=type.g1)
+	type.g1[1,4] <- e$legend.pos <- gedit(defaults.cohort$legend.pos, width=12, container=type.g1)
+	tooltip(e$legend.pos) <- 'Position of the legend passed to the "legend" function.'
+	type.g1[2,3, anchor=leftcenter] <- glabel('# dev columns:', container=type.g1)
+	type.g1[2,4] <- e$dev.ncol <- gedit(defaults.cohort$dev.ncol, width=3, container=type.g1)
+	tooltip(e$dev.ncol) <- "Number of columns in the plot matrix."
+	type.g1[1,5] <- e$show.legend <- gcheckbox('Show legend', container=type.g1, checked=defaults.cohort$show.legend)
+
+
+	addSpace(g, 10)
+	graph.f <- gframe("<span color='blue'>Advanced graph parameters</span>", markup=TRUE, 
+									horizontal=FALSE, container=g)
+	e$graph.pars <- create.graph.pars.widgets(graph.f, main.win=main.win)
+	addSpring(g)
+	button.g <- ggroup(horizontal=TRUE, container=g)
+	create.help.button(topic=c('pop.cohorts.plot', 'pop.expressions'), package='bayesPop', parent.group=button.g,
+						parent.window=main.win)
+	addSpring(button.g)
+	create.generate.script.button(handler=show.pop.cohorts, 
+							action=list(mw=main.win, env=e, script=TRUE, type='plot', allow.null.country=TRUE), container=button.g)
+	addSpace(button.g, 5)
+	TableB.show.cohort.act <- gaction(label='Table', icon='dataframe', handler=show.pop.cohorts, 
+						action=list(mw=main.win, env=e, type='table', script=FALSE, allow.null.country=TRUE))
+	GraphB.show.cohort.act <- gaction(label='Graph', icon='lines', handler=show.pop.cohorts, 
+						action=list(mw=main.win, env=e, type='plot', script=FALSE, allow.null.country=TRUE))
+	bDem.gbutton(action=TableB.show.cohort.act, container=button.g)
+	bDem.gbutton(action=GraphB.show.cohort.act, container=button.g)
+	return(e)
+}
+
+
+
+show.pop.cohorts <- function(h, ...) {
+	e <- h$action$env
+	if(!has.required.arguments(list(sim.dir='Simulation directory'), env=e)) return()
+	show.type <- h$action$type
+	allow.null.country <- if(is.null(h$action$allow.null.country)) FALSE else h$action$allow.null.country
+	country.pars <- get.country.code.from.widget(e$show.cohort.country$country.w, e$show.cohort.country, 
+							 allow.null.country=allow.null.country)
+	if(is.null(country.pars)) {
+		if(!allow.null.country) return(NULL)
+		else if(!.pop.traj.country.check(e))
+				 return(NULL)
+	}
+	param.names.all <- list(text=c('sim.dir'), numvector=c('pi',  'cohorts'), 
+							numeric=c('dev.ncol'), logical=c('show.legend'))
+	param.env <- get.parameters(param.names.all, env=e, quote=h$action$script)
+	param.env <- c(param.env, get.parameters(list(text=c('legend.pos', 'expression')), env=e, quote=show.type=="plot" || h$action$script==TRUE))
+	param.env.rest <- list(country=country.pars$code, aggregation=e$aggregation)
+	param.env <- c(param.env, get.parameters(list(text=c('aggregation'), numeric='country'), 
+									param.env.rest, quote=TRUE,
+									retrieve.from.widgets=FALSE))
+	if(!svalue(e$use.expression)) param.env[['expression']] <- NULL
+	else param.env[['country']] <- NULL
+	param.pred <- param.env['sim.dir']
+	if(is.element('aggregation', names(param.env))) param.pred <- c(param.pred, param.env['aggregation'])
+	# get it now unquoted (to avoid double quotes if script is TRUE)
+	param.pred.ev <- c(get.parameters(list(text=c('sim.dir')), env=e, quote=FALSE),
+			get.parameters(list(text=c('aggregation')), env=e, quote=FALSE, retrieve.from.widgets=FALSE))		 
+	pred <- do.call('get.pop.prediction', param.pred.ev)
+	if(is.null(pred)) {
+		gmessage('Simulation directory contains no prediction of the specified type.', 
+					title='Input Error', icon='error')
+		return(NULL)
+	}
+	if(h$action$script) {
+		cmd <- paste('pred <- get.pop.prediction(', assemble.arguments(param.pred), ')\n', sep='')
+	} else {	
+		cmd <- ''
+	}
+	param.plot1c <- list()
+	for(item in names(param.env)) {
+		if(!item %in% c('sim.dir', 'aggregation'))
+			param.plot1c[[item]] <- param.env[[item]]
+	}
+	pars.value <- svalue(e$graph.pars)
+	if (show.type == 'plot') {
+		#param.plot1c <- param.env #[c('expression', 'pi', 'cohorts', 'nr.traj', 'show.legend', 'dev.ncol', 'legend.pos')]
+		#if(is.element('country', names(param.env))) param.plot1c <- c(param.plot1c, param.env['country'])
+		cmd <- paste(cmd, 'pop.cohorts.plot', '(pred,', assemble.arguments(param.plot1c, pars.value), ')\n')
+		if (h$action$script) {
+				create.script.widget(cmd, h$action$mw, package="bayesPop")
+			} else {
+				create.graphics.window(parent=h$action$mw, title=paste("Trajectories", 
+							if(!is.null(country.pars$name) && !is.null(param.env[['country']])) paste("for", country.pars$name) else ""))
+				eval(parse(text=cmd))
+			}
+	} else {
+		# Table
+		param.table <- param.env['pi']
+		param.table <- c(param.table, if('country' %in% names(param.env)) param.env['country'] else param.env['expression'])
+		table.values <- do.call('cohorts', c(list(pred), param.table))
+		table.values[['last.observed']] <- NULL
+		# select cohorts
+		if(!is.null(param.env$cohorts)) {
+			.round.to.lower5 <- function(x) 5*floor(x/5) 
+			from.cohorts <- .round.to.lower5(param.env$cohorts)
+			cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+			table.values <- table.values[cohorts]
+		}
+		# print
+		cohort.table <- c()
+		con <- textConnection("cohort.table", "w", local=TRUE)
+		sink(con)
+		print(table.values)
+		close(con)
+		create.script.widget(cohort.table, h$action$mw, 'bayesPop', title="Cohort data")
+	}
+}
+
 
 pop.show.pyramid.group <- function(g, main.win, parent.env) {
 	leftcenter <- c(-1, 0)
