@@ -1,3 +1,7 @@
+2.5-1 (11/21/2016)
+-----
+Renamed two S3 methods due to renaming changes in bayesTFR-5.0-4.
+
 2.5-0 (3/18/2016)
 -----
 Updated to wpp2015.

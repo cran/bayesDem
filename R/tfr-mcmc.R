@@ -780,7 +780,7 @@ get.table.of.countries.from.locfile <- function(sim.dir, sorted=TRUE, type='tfr'
 	tfr.data <- do.call(paste('get.', type, '.UN.data', sep=''), list(meta=mcmc.set$meta))
 	codes <- tfr.data[,'country_code']
 	# filter out countries used already for an estimation
-	used.codes <- mcmc.set$meta$regions$country_code[1:(get.nr.countries.est(mcmc.set$meta))]
+	used.codes <- mcmc.set$meta$regions$country_code[1:(get.nrest.countries(mcmc.set$meta))]
 	codes <- codes[!is.element(codes, used.codes)] # codes not used in the estimation
 			
 	# get the UN location dataset
